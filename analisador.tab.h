@@ -40,14 +40,30 @@
       know about them.  */
    enum yytokentype {
      TK_INT = 258,
-     TK_MAIN = 259,
-     TK_NUM = 260
+     TK_FLOAT = 259,
+     TK_MAIN = 260,
+     TK_NUM = 261,
+     TK_ID = 262,
+     TK_FLOATNUM = 263,
+     TK_CHAR = 264,
+     TK_BOOLEAN = 265,
+     TK_TRUE = 266,
+     TK_FALSE = 267,
+     TK_CHARLIT = 268
    };
 #endif
 /* Tokens.  */
 #define TK_INT 258
-#define TK_MAIN 259
-#define TK_NUM 260
+#define TK_FLOAT 259
+#define TK_MAIN 260
+#define TK_NUM 261
+#define TK_ID 262
+#define TK_FLOATNUM 263
+#define TK_CHAR 264
+#define TK_BOOLEAN 265
+#define TK_TRUE 266
+#define TK_FALSE 267
+#define TK_CHARLIT 268
 
 
 
