@@ -49,7 +49,16 @@
      TK_BOOLEAN = 265,
      TK_TRUE = 266,
      TK_FALSE = 267,
-     TK_CHARLIT = 268
+     TK_CHARLIT = 268,
+     TK_LT = 269,
+     TK_LE = 270,
+     TK_GT = 271,
+     TK_GE = 272,
+     TK_EQ = 273,
+     TK_NE = 274,
+     TK_AND = 275,
+     TK_OR = 276,
+     TK_NOT = 277
    };
 #endif
 /* Tokens.  */
@@ -64,6 +73,15 @@
 #define TK_TRUE 266
 #define TK_FALSE 267
 #define TK_CHARLIT 268
+#define TK_LT 269
+#define TK_LE 270
+#define TK_GT 271
+#define TK_GE 272
+#define TK_EQ 273
+#define TK_NE 274
+#define TK_AND 275
+#define TK_OR 276
+#define TK_NOT 277
 
 
 

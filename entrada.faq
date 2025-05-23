@@ -1,9 +1,19 @@
 int main {
-    char C;
-    C = 'a';
-    boolean B;
-    B = true;
+    int I;
+    float F;
+    I = (int) F;
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
