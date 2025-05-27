@@ -1,8 +1,51 @@
 int main {
-    int I;
-    float F;
-    I = (int) F;
+    int i;
+
+    for (i = 0; i < 3; i = i + 1) {
+        print(i);
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

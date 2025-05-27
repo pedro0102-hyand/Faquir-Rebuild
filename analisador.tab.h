@@ -45,20 +45,31 @@
      TK_NUM = 261,
      TK_ID = 262,
      TK_FLOATNUM = 263,
-     TK_CHAR = 264,
-     TK_BOOLEAN = 265,
-     TK_TRUE = 266,
-     TK_FALSE = 267,
-     TK_CHARLIT = 268,
-     TK_LT = 269,
-     TK_LE = 270,
-     TK_GT = 271,
-     TK_GE = 272,
-     TK_EQ = 273,
-     TK_NE = 274,
-     TK_AND = 275,
-     TK_OR = 276,
-     TK_NOT = 277
+     TK_PRINT = 264,
+     TK_READ = 265,
+     TK_STRING = 266,
+     TK_CHAR = 267,
+     TK_BOOLEAN = 268,
+     TK_TRUE = 269,
+     TK_FALSE = 270,
+     TK_CHARLIT = 271,
+     TK_LT = 272,
+     TK_LE = 273,
+     TK_GT = 274,
+     TK_GE = 275,
+     TK_EQ = 276,
+     TK_NE = 277,
+     TK_AND = 278,
+     TK_OR = 279,
+     TK_NOT = 280,
+     TK_IF = 281,
+     TK_ELSE = 282,
+     TK_WHILE = 283,
+     TK_DO = 284,
+     TK_FOR = 285,
+     TK_SWITCH = 286,
+     TK_CASE = 287,
+     TK_DEFAULT = 288
    };
 #endif
 /* Tokens.  */
@@ -68,20 +79,31 @@
 #define TK_NUM 261
 #define TK_ID 262
 #define TK_FLOATNUM 263
-#define TK_CHAR 264
-#define TK_BOOLEAN 265
-#define TK_TRUE 266
-#define TK_FALSE 267
-#define TK_CHARLIT 268
-#define TK_LT 269
-#define TK_LE 270
-#define TK_GT 271
-#define TK_GE 272
-#define TK_EQ 273
-#define TK_NE 274
-#define TK_AND 275
-#define TK_OR 276
-#define TK_NOT 277
+#define TK_PRINT 264
+#define TK_READ 265
+#define TK_STRING 266
+#define TK_CHAR 267
+#define TK_BOOLEAN 268
+#define TK_TRUE 269
+#define TK_FALSE 270
+#define TK_CHARLIT 271
+#define TK_LT 272
+#define TK_LE 273
+#define TK_GT 274
+#define TK_GE 275
+#define TK_EQ 276
+#define TK_NE 277
+#define TK_AND 278
+#define TK_OR 279
+#define TK_NOT 280
+#define TK_IF 281
+#define TK_ELSE 282
+#define TK_WHILE 283
+#define TK_DO 284
+#define TK_FOR 285
+#define TK_SWITCH 286
+#define TK_CASE 287
+#define TK_DEFAULT 288
 
 
 

@@ -13,6 +13,20 @@ ESPACO      [ \t\r\n]+
 "float"     { return TK_FLOAT; }
 "main"      { return TK_MAIN; }
 
+"if"        { return TK_IF; }
+"else"      { return TK_ELSE; }
+
+"while"     { return TK_WHILE; }
+
+"do"        { return TK_DO; }
+
+"for"       { return TK_FOR; }
+
+"switch"    { return TK_SWITCH; }
+"case"      { return TK_CASE; }
+"default"   { return TK_DEFAULT; }
+
+
 "{"         { return '{'; }
 "}"         { return '}'; }
 "("         { return '('; }
@@ -48,6 +62,12 @@ ESPACO      [ \t\r\n]+
 
 [0-9]+\.[0-9]+   { yylval.label = yytext; return TK_FLOATNUM; }
 {DIGITO}         { yylval.label = yytext; return TK_NUM; }
+
+"print"     { return TK_PRINT; }
+"read"      { return TK_READ; }
+"string"    { return TK_STRING; }
+
+
 
 [A-Za-z_][A-Za-z0-9_]* {
     yylval.label = string(yytext);
