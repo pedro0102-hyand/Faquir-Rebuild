@@ -16,6 +16,10 @@ ESPACO      [ \t\r\n]+
 "if"        { return TK_IF; }
 "else"      { return TK_ELSE; }
 
+"break"     { return TK_BREAK; }
+"continue"  { return TK_CONTINUE; }
+
+
 "while"     { return TK_WHILE; }
 
 "do"        { return TK_DO; }
@@ -66,6 +70,12 @@ ESPACO      [ \t\r\n]+
 "print"     { return TK_PRINT; }
 "read"      { return TK_READ; }
 "string"    { return TK_STRING; }
+
+\"[^\"]*\" {
+    yylval.label = yytext;
+    return TK_STRLIT;
+}
+
 
 
 

@@ -69,7 +69,10 @@
      TK_FOR = 285,
      TK_SWITCH = 286,
      TK_CASE = 287,
-     TK_DEFAULT = 288
+     TK_DEFAULT = 288,
+     TK_BREAK = 289,
+     TK_CONTINUE = 290,
+     TK_STRLIT = 291
    };
 #endif
 /* Tokens.  */
@@ -104,6 +107,9 @@
 #define TK_SWITCH 286
 #define TK_CASE 287
 #define TK_DEFAULT 288
+#define TK_BREAK 289
+#define TK_CONTINUE 290
+#define TK_STRLIT 291
 
 
 

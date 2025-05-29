@@ -7,10 +7,25 @@
 int temp_count = 0;
 int yydebug = 1;
 std::vector<std::string> declaracoes;
-std::vector<std::string> variaveis;
-std::vector<std::string> temporarios;
-std::vector<std::string> tipos;
-std::vector<std::string> loop_labels;
+std::string gentemp(std::string tipo);
+
+struct Simbolo {
+    std::string nome;
+    std::string tipo;
+    std::string temp;
+};
+
+std::vector<std::vector<Simbolo>> tabela_simbolos;
+
+enum TipoControle { LOOP, SWITCH };
+
+struct Controle {
+    TipoControle tipo;
+    std::string rotulo_break;
+    std::string rotulo_continue;  
+};
+
+std::vector<Controle> pilha_controle;
 
 
 int yylex(void);
@@ -20,22 +35,37 @@ void yyerror(const char* s) {
 }
 
 std::string get_temp(const std::string& var) {
-    for (size_t i = 0; i < variaveis.size(); ++i) {
-        if (variaveis[i] == var)
-            return temporarios[i];
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i) {
+        for (const auto& s : tabela_simbolos[i]) {
+            if (s.nome == var) return s.temp;
+        }
     }
     std::cerr << "Erro: variável '" << var << "' não declarada.\n";
     exit(1);
 }
 
 std::string get_tipo(const std::string& var) {
-    for (size_t i = 0; i < variaveis.size(); ++i) {
-        if (variaveis[i] == var)
-            return tipos[i];
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i) {
+        for (const auto& s : tabela_simbolos[i]) {
+            if (s.nome == var) return s.tipo;
+        }
     }
     std::cerr << "Erro: variável '" << var << "' não declarada.\n";
     exit(1);
 }
+
+
+void declarar(const std::string& nome, const std::string& tipo) {
+    for (const auto& s : tabela_simbolos.back()) {
+        if (s.nome == nome) {
+            std::cerr << "Erro: variável '" << nome << "' já declarada neste escopo.\n";
+            exit(1);
+        }
+    }
+    std::string t = gentemp(tipo);
+    tabela_simbolos.back().push_back({nome, tipo, t});
+}
+
 
 std::string gentemp(std::string tipo) {
     temp_count++;
@@ -66,6 +96,8 @@ std::string gerar_cast(std::string origem, std::string tipo_origem, std::string 
 %token TK_DO
 %token TK_FOR
 %token TK_SWITCH TK_CASE TK_DEFAULT
+%token TK_BREAK TK_CONTINUE TK_STRLIT
+
 
 
 
@@ -102,8 +134,11 @@ LISTA_COMANDOS : COMANDO
                }
 ;
 
-BLOCO : '{' LISTA_COMANDOS '}' {
-    $$.traducao = $2.traducao;
+BLOCO : '{' {
+    tabela_simbolos.push_back({});  
+} LISTA_COMANDOS '}' {
+    $$.traducao = $3.traducao;
+    tabela_simbolos.pop_back();     
 }
 ;
 
@@ -134,71 +169,31 @@ COMANDO : TK_ID '=' E ';' {
     }
 }
 | TK_INT TK_ID ';' {
-    for (const std::string& v : variaveis) {
-        if (v == $2.label) {
-            std::cerr << "Erro: variável '" << $2.label << "' já declarada.\n";
-            exit(1);
-        }
-    }
-    std::string t = gentemp("int");
-    variaveis.push_back($2.label);
-    temporarios.push_back(t);
-    tipos.push_back("int");
-    $$.traducao = "";
-}
-| TK_FLOAT TK_ID ';' {
-    for (const std::string& v : variaveis) {
-        if (v == $2.label) {
-            std::cerr << "Erro: variável '" << $2.label << "' já declarada.\n";
-            exit(1);
-        }
-    }
-    std::string t = gentemp("float");
-    variaveis.push_back($2.label);
-    temporarios.push_back(t);
-    tipos.push_back("float");
-    $$.traducao = "";
-}
-| TK_CHAR TK_ID ';' {
-    for (const std::string& v : variaveis) {
-        if (v == $2.label) {
-            std::cerr << "Erro: variável '" << $2.label << "' já declarada.\n";
-            exit(1);
-        }
-    }
-    std::string t = gentemp("char");
-    variaveis.push_back($2.label);
-    temporarios.push_back(t);
-    tipos.push_back("char");
-    $$.traducao = "";
-}
-| TK_BOOLEAN TK_ID ';' {
-    for (const std::string& v : variaveis) {
-        if (v == $2.label) {
-            std::cerr << "Erro: variável '" << $2.label << "' já declarada.\n";
-            exit(1);
-        }
-    }
-    std::string t = gentemp("int");
-    variaveis.push_back($2.label);
-    temporarios.push_back(t);
-    tipos.push_back("boolean");
+    declarar($2.label, "int");
     $$.traducao = "";
 }
 
-| TK_STRING TK_ID ';' {
-    for (const std::string& v : variaveis) {
-        if (v == $2.label) {
-            std::cerr << "Erro: variável '" << $2.label << "' já declarada.\n";
-            exit(1);
-        }
-    }
-    std::string t = gentemp("char*");
-    variaveis.push_back($2.label);
-    temporarios.push_back(t);
-    tipos.push_back("string");
+| TK_FLOAT TK_ID ';' {
+    declarar($2.label, "float");
     $$.traducao = "";
 }
+
+| TK_CHAR TK_ID ';' {
+    declarar($2.label, "char");
+    $$.traducao = "";
+}
+
+| TK_BOOLEAN TK_ID ';' {
+    declarar($2.label, "boolean");
+    $$.traducao = "";
+}
+
+
+| TK_STRING TK_ID ';' {
+    declarar($2.label, "string");
+    $$.traducao = "";
+}
+
 | TK_PRINT '(' TK_ID ')' ';' {
     std::string temp = get_temp($3.label);
     std::string tipo = get_tipo($3.label);
@@ -212,6 +207,11 @@ COMANDO : TK_ID '=' E ';' {
 
     $$.traducao = "    printf(\"" + fmt + "\\n\", " + temp + ");\n";
 }
+
+| TK_PRINT '(' TK_STRLIT ')' ';' {
+    $$.traducao = "    printf(\"%s\\n\", " + $3.label + ");\n";
+}
+
 | TK_READ '(' TK_ID ')' ';' {
     std::string temp = get_temp($3.label);
     std::string tipo = get_tipo($3.label);
@@ -253,82 +253,112 @@ COMANDO : TK_ID '=' E ';' {
     std::string l_inicio = "L" + std::to_string(++temp_count);
     std::string l_fim = "L" + std::to_string(++temp_count);
 
-    // ✅ empilha antes de $5 ser processado
-    loop_labels.push_back(l_fim);
-
-    std::string bloco = $5.traducao;
+    // Empilha controle de laço
+    pilha_controle.push_back({LOOP, l_fim, l_inicio});
 
     $$.traducao = l_inicio + ":\n";
     $$.traducao += $3.traducao;
     $$.traducao += "    if (!" + $3.label + ") goto " + l_fim + ";\n";
-    $$.traducao += bloco;
+    $$.traducao += $5.traducao;
     $$.traducao += "    goto " + l_inicio + ";\n";
     $$.traducao += l_fim + ":\n";
 
-    loop_labels.pop_back(); // ✅ depois que já usamos $5
+    // Sai do laço
+    pilha_controle.pop_back();
 }
+
 
 | TK_DO BLOCO TK_WHILE '(' E ')' ';' {
     std::string l_inicio = "L" + std::to_string(++temp_count);
     std::string l_cond = "L" + std::to_string(++temp_count);
     std::string l_fim = "L" + std::to_string(++temp_count);
 
-    loop_labels.push_back(l_cond); // destino do continue
-
-    std::string bloco = $2.traducao;
-
-    loop_labels.pop_back(); // remove após bloco
+    // Empilha controle do laço
+    pilha_controle.push_back({LOOP, l_fim, l_cond}); // continue → l_cond
 
     $$.traducao = l_inicio + ":\n";
-    $$.traducao += bloco;
+    $$.traducao += $2.traducao;
     $$.traducao += l_cond + ":\n";
     $$.traducao += $5.traducao;
     $$.traducao += "    if (" + $5.label + ") goto " + l_inicio + ";\n";
     $$.traducao += l_fim + ":\n";
+
+    pilha_controle.pop_back();
 }
+
 
 | TK_FOR '(' INIT E ';' INCR ')' BLOCO {
     std::string l_inicio = "L" + std::to_string(++temp_count);
     std::string l_cond = "L" + std::to_string(++temp_count);
     std::string l_fim = "L" + std::to_string(++temp_count);
 
-    // empilha o destino de break e continue
-    loop_labels.push_back(l_fim);  // break vai pra cá
-    loop_labels.push_back(l_cond); // continue vai pra cá
+    // Empilha controle do laço
+    pilha_controle.push_back({LOOP, l_fim, l_cond}); // break → fim, continue → cond
 
     $$.traducao = $3.traducao;  // INIT
     $$.traducao += l_inicio + ":\n";
-    $$.traducao += $4.traducao;  // condição
+    $$.traducao += $4.traducao; // CONDIÇÃO
     $$.traducao += "    if (!" + $4.label + ") goto " + l_fim + ";\n";
-    $$.traducao += $8.traducao;  // bloco
+    $$.traducao += $8.traducao; // BLOCO
     $$.traducao += l_cond + ":\n";
-    $$.traducao += $6.traducao;  // incremento
+    $$.traducao += $6.traducao; // INCR
     $$.traducao += "    goto " + l_inicio + ";\n";
     $$.traducao += l_fim + ":\n";
 
-    loop_labels.pop_back(); // pop continue
-    loop_labels.pop_back(); // pop break
+    pilha_controle.pop_back();
 }
+
 
 | TK_SWITCH '(' E ')' '{' CASOS '}' {
     std::string switch_var = "__switch_var" + std::to_string(++temp_count);
     declaracoes.push_back("int " + switch_var + ";");
 
-    // Armazena valor da expressão em uma variável auxiliar
+    std::string l_fim_switch = "L" + std::to_string(++temp_count);
+
+    // Empilha controle SWITCH (sem continue)
+    pilha_controle.push_back({SWITCH, l_fim_switch, ""});
+
     std::string codigo = $3.traducao;
     codigo += "    " + switch_var + " = " + $3.label + ";\n";
 
-    // Substitui __switch_var por switch_var com proteção contra loop
     std::string casos_traducao = $6.traducao;
+
+    // Substitui __switch_var pelo nome real
     std::string from = "__switch_var";
     size_t pos = 0;
     while ((pos = casos_traducao.find(from, pos)) != std::string::npos) {
         casos_traducao.replace(pos, from.length(), switch_var);
-        pos += switch_var.length();  // avança para evitar loop infinito
+        pos += switch_var.length();
     }
 
-    $$.traducao = codigo + casos_traducao;
+    pilha_controle.pop_back();
+
+    $$.traducao = codigo + casos_traducao + l_fim_switch + ":\n";
 }
+
+| TK_BREAK ';' {
+    if (pilha_controle.empty()) {
+        std::cerr << "Erro: 'break' fora de estrutura de controle.\n";
+        exit(1);
+    }
+    $$.traducao = "    goto " + pilha_controle.back().rotulo_break + "; // break\n";
+}
+
+| TK_CONTINUE ';' {
+    bool encontrou = false;
+    for (int i = pilha_controle.size() - 1; i >= 0; --i) {
+        if (pilha_controle[i].tipo == LOOP) {
+            $$.traducao = "    goto " + pilha_controle[i].rotulo_continue + "; // continue\n";
+            encontrou = true;
+            break;
+        }
+    }
+    if (!encontrou) {
+        std::cerr << "Erro: 'continue' fora de laço.\n";
+        exit(1);
+    }
+}
+
 
 
 
@@ -539,6 +569,7 @@ E : E '+' E {
 
 int main() {
     yydebug = 1;
+    tabela_simbolos.push_back({});
     yyparse();
     return 0;
 }
