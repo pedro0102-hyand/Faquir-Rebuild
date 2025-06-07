@@ -1015,13 +1015,14 @@ case 42:
 YY_RULE_SETUP
 #line 74 "analisador.l"
 {
-    yylval.label = yytext;
+    std::string str(yytext);
+    yylval.label = str.substr(1, str.size() - 2); // remove as aspas
     return TK_STRLIT;
 }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 82 "analisador.l"
+#line 84 "analisador.l"
 {
     yylval.label = string(yytext);
     return TK_ID;
@@ -1030,20 +1031,20 @@ YY_RULE_SETUP
 case 44:
 /* rule 44 can match eol */
 YY_RULE_SETUP
-#line 87 "analisador.l"
+#line 89 "analisador.l"
 { /* ignora */ }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 89 "analisador.l"
+#line 91 "analisador.l"
 { return *yytext; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 91 "analisador.l"
+#line 93 "analisador.l"
 ECHO;
 	YY_BREAK
-#line 1046 "lex.yy.c"
+#line 1047 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2048,7 +2049,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 91 "analisador.l"
+#line 93 "analisador.l"
 
 
 int yywrap() { return 1; }

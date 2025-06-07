@@ -1,0 +1,861 @@
+%{
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <unordered_map>
+
+#include "tipos.h"
+
+int temp_count = 0;
+int label_count = 0;
+int escopo_count = 0;
+int yydebug = 1;
+
+std::string escopo_atual = "global";
+int profundidade_escopo = 0;
+std::vector<std::string> nome_escopo = {"global"};
+std::vector<std::string> declaracoes;
+std::string gentemp(std::string tipo);
+
+struct Simbolo {
+    std::string nome;
+    std::string tipo;
+    std::string temp;
+    std::string escopo;
+    bool constante = false;
+    bool usado = false;
+    int nivel_escopo;
+};
+
+std::vector<std::unordered_map<std::string, Simbolo>> tabela_simbolos;
+
+enum TipoControle { LOOP, SWITCH };
+
+struct Controle {
+    TipoControle tipo;
+    std::string rotulo_break;
+    std::string rotulo_continue;
+};
+
+std::vector<Controle> pilha_controle;
+
+int yylex(void);
+
+void yyerror(const char* s) {
+    std::cerr << "Erro de sintaxe: " << s << std::endl;
+    exit(1);
+}
+
+void iniciar_escopo(std::string nome_customizado = "") {
+    tabela_simbolos.push_back({});
+    profundidade_escopo++;
+    escopo_count++;
+
+    if (nome_customizado != "") {
+        escopo_atual = nome_customizado;
+    } else {
+        escopo_atual = "escopo_" + std::to_string(escopo_count);
+    }
+
+    nome_escopo.push_back(escopo_atual);
+}
+
+void encerrar_escopo() {
+    dump_tabela();  // opcional
+    tabela_simbolos.pop_back();
+    nome_escopo.pop_back();
+    profundidade_escopo--;
+
+    escopo_atual = (profundidade_escopo > 0)
+        ? nome_escopo.back()
+        : "global";
+}
+
+
+std::string get_temp(const std::string& var) {
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i) {
+        if (tabela_simbolos[i].count(var))
+            return tabela_simbolos[i][var].temp;
+    }
+    std::cerr << "Erro: variável '" << var << "' não declarada.\n";
+    exit(1);
+}
+
+std::string get_tipo(const std::string& var) {
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i) {
+        if (tabela_simbolos[i].count(var))
+            return tabela_simbolos[i][var].tipo;
+    }
+    std::cerr << "Erro: variável '" << var << "' não declarada.\n";
+    exit(1);
+}
+
+Simbolo buscar_simbolo(const std::string& nome) {
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i) {
+        if (tabela_simbolos[i].count(nome)) {
+            return tabela_simbolos[i][nome];
+        }
+    }
+    std::cerr << "Erro: variável '" << nome << "' não declarada.\n";
+    exit(1);
+}
+
+void declarar(const std::string& nome, const std::string& tipo, bool constante = false) {
+    if (tabela_simbolos.back().count(nome)) {
+        std::cerr << "Erro: variável '" << nome << "' já declarada neste escopo.\n";
+        exit(1);
+    }
+    std::string t = gentemp(tipo);
+
+    Simbolo s;
+    s.nome = nome;
+    s.tipo = tipo;
+    s.temp = t;
+    s.escopo = escopo_atual;
+    s.constante = constante;
+    s.usado = false;
+    s.nivel_escopo = profundidade_escopo;
+
+    tabela_simbolos.back()[nome] = s;
+}
+
+std::string gentemp(std::string tipo) {
+    temp_count++;
+    std::string nome = "T" + std::to_string(temp_count);
+    declaracoes.push_back(tipo + " " + nome + ";");
+    return nome;
+}
+
+std::string genlabel() {
+    return "L" + std::to_string(++label_count);
+}
+
+bool dentro_de(TipoControle tipo) {
+    for (int i = pilha_controle.size() - 1; i >= 0; --i) {
+        if (pilha_controle[i].tipo == tipo)
+            return true;
+    }
+    return false;
+}
+
+void dump_tabela() {
+    std::cout << "\n------ TABELA DE SÍMBOLOS ------\n";
+    for (int i = 0; i < tabela_simbolos.size(); ++i) {
+        std::cout << "Escopo " << nome_escopo[i] << " (nível " << i << "):\n";
+        for (std::unordered_map<std::string, Simbolo>::const_iterator it = tabela_simbolos[i].begin(); it != tabela_simbolos[i].end(); ++it) {
+            const std::string& nome = it->first;
+            const Simbolo& simbolo = it->second;
+            std::cout << "  " << simbolo.nome << " (" << simbolo.tipo << ") -> " << simbolo.temp;
+            if (simbolo.constante) std::cout << " [const]";
+            std::cout << "\n";
+        }
+    }
+    std::cout << "--------------------------------\n\n";
+}
+
+
+// Conversão implícita int → float
+std::string gerar_cast(std::string origem, std::string tipo_origem, std::string tipo_destino, std::string& traducao) {
+    if (tipo_origem == tipo_destino)
+        return origem;
+
+    std::string temp = gentemp(tipo_destino);
+    traducao += "    " + temp + " = (" + tipo_destino + ") " + origem + ";\n";
+    return temp;
+}
+%}
+
+
+
+
+%token TK_INT TK_FLOAT TK_MAIN TK_NUM TK_ID TK_FLOATNUM
+%token TK_PRINT TK_READ TK_STRING
+%token TK_CHAR TK_BOOLEAN TK_TRUE TK_FALSE TK_CHARLIT
+%token TK_LT TK_LE TK_GT TK_GE TK_EQ TK_NE
+%token TK_AND TK_OR TK_NOT
+%token TK_IF TK_ELSE
+%token TK_WHILE 
+%token TK_DO
+%token TK_FOR
+%token TK_SWITCH TK_CASE TK_DEFAULT
+%token TK_BREAK TK_CONTINUE TK_STRLIT
+
+
+
+
+
+%left '+' '-'
+%left '*' '/'
+%right TK_NOT
+%left TK_AND
+%left TK_OR
+
+
+
+%start S
+
+%%
+
+S : TK_INT TK_MAIN '{' LISTA_COMANDOS '}' {
+    std::stringstream ss;
+    ss << "/* Compilador Faquir Rebuild */\n";
+    ss << "#include <stdio.h>\n";
+    ss << "int main(void) {\n";
+
+    for (const std::string& decl : declaracoes)
+        ss << "    " << decl << "\n";
+
+    ss << $4.traducao;
+    ss << "    return 0;\n";
+    ss << "}\n";
+
+    std::cout << ss.str();
+
+    // Opcional: dump da tabela de símbolos no final para depuração
+    // dump_tabela();
+}
+;
+
+LISTA_COMANDOS
+    : COMANDO
+    | LISTA_COMANDOS COMANDO {
+        $$.traducao = $1.traducao + $2.traducao;
+    }
+;
+
+BLOCO
+    : '{' {
+        // Cria novo escopo
+        escopo_count++;
+        profundidade_escopo++;
+        escopo_atual = "escopo_" + std::to_string(escopo_count);
+        nome_escopo.push_back(escopo_atual);
+        tabela_simbolos.push_back({});
+    }
+    LISTA_COMANDOS '}' {
+        $$.traducao = $3.traducao;
+
+        // Sai do escopo
+        tabela_simbolos.pop_back();
+        nome_escopo.pop_back();
+        profundidade_escopo--;
+        escopo_atual = nome_escopo.back();
+    }
+;
+
+
+INIT : TK_ID '=' E ';' {
+    std::string var_temp = get_temp($1.label);
+    std::string var_tipo = get_tipo($1.label);
+
+    std::stringstream ss;
+    ss << $3.traducao;
+
+    std::string traducao_temp = ss.str();
+    std::string rhs = gerar_cast($3.label, $3.tipo, var_tipo, traducao_temp);
+
+    ss.str(""); ss.clear();
+    ss << traducao_temp;
+    ss << "    " << var_temp << " = " << rhs << ";\n";
+    $$.traducao = ss.str();
+};
+
+
+INCR : TK_ID '=' E {
+    std::string var_temp = get_temp($1.label);
+    std::string var_tipo = get_tipo($1.label);
+
+    std::stringstream ss;
+    ss << $3.traducao;
+
+    std::string traducao_temp = ss.str();
+    std::string rhs = gerar_cast($3.label, $3.tipo, var_tipo, traducao_temp);
+
+    ss.str(""); ss.clear();
+    ss << traducao_temp;
+    ss << "    " << var_temp << " = " << rhs << ";\n";
+    $$.traducao = ss.str();
+};
+
+
+COMANDO : TK_ID '=' E ';' {
+    std::string var_temp = get_temp($1.label);
+    std::string var_tipo = get_tipo($1.label);
+
+    std::stringstream ss;
+    ss << $3.traducao;
+
+    std::string traducao_temp = ss.str();
+    std::string rhs = gerar_cast($3.label, $3.tipo, var_tipo, traducao_temp);
+
+    ss.str(""); ss.clear();
+    ss << traducao_temp;
+    ss << "    " << var_temp << " = " << rhs << ";\n";
+    $$.traducao = ss.str();
+}
+
+
+
+| TK_INT TK_ID ';' {
+    declarar($2.label, "int");
+    $$.traducao = "";
+}
+
+| TK_FLOAT TK_ID ';' {
+    declarar($2.label, "float");
+    $$.traducao = "";
+}
+
+| TK_CHAR TK_ID ';' {
+    declarar($2.label, "char");
+    $$.traducao = "";
+}
+
+| TK_BOOLEAN TK_ID ';' {
+    declarar($2.label, "boolean");
+    $$.traducao = "";
+}
+
+
+| TK_STRING TK_ID ';' {
+    declarar($2.label, "string");
+    $$.traducao = "";
+}
+
+| TK_PRINT '(' TK_ID ')' ';' {
+    std::string temp = get_temp($3.label);
+    std::string tipo = get_tipo($3.label);
+    std::string fmt;
+
+    if (tipo == "int") fmt = "%d";
+    else if (tipo == "float") fmt = "%f";
+    else if (tipo == "char") fmt = "%c";
+    else if (tipo == "string") fmt = "%s";
+    else {
+        std::cerr << "Erro: tipo inválido para printf: '" << tipo << "'\n";
+        exit(1);
+    }
+
+    std::stringstream ss;
+    ss << "    printf(\"" << fmt << "\\n\", " << temp << "); // print de '" << $3.label << "'\n";
+    $$.traducao = ss.str();
+}
+
+
+| TK_PRINT '(' TK_STRLIT ')' ';' {
+    std::stringstream ss;
+    ss << "    printf(\"%s\\n\", " << $3.label << "); // print de string literal\n";
+    $$.traducao = ss.str();
+}
+
+
+
+| TK_READ '(' TK_ID ')' ';' {
+    std::string temp = get_temp($3.label);
+    std::string tipo = get_tipo($3.label);
+    std::string fmt;
+
+    if (tipo == "int") fmt = "%d";
+    else if (tipo == "float") fmt = "%f";
+    else if (tipo == "char") fmt = " %c";  // espaço evita problemas com buffer
+    else if (tipo == "string") fmt = "%s";
+    else {
+        std::cerr << "Erro: tipo inválido para scanf: '" << tipo << "'\n";
+        exit(1);
+    }
+
+    std::string ref = (tipo == "string") ? temp : "&" + temp;
+
+    std::stringstream ss;
+    ss << "    scanf(\"" << fmt << "\", " << ref << "); // leitura de '" << $3.label << "'\n";
+    $$.traducao = ss.str();
+}
+
+
+| TK_IF '(' E ')' BLOCO {
+    if ($3.tipo != "boolean") {
+        std::cerr << "Erro: condição do 'if' deve ser booleana, mas é '" << $3.tipo << "'\n";
+        exit(1);
+    }
+
+    std::string l_fim = "L" + std::to_string(++temp_count);
+
+    std::stringstream ss;
+    ss << $3.traducao;
+    ss << "    if (!" << $3.label << ") goto " << l_fim << "; // if condicional falsa\n";
+    ss << $5.traducao;
+    ss << l_fim << ":\n";
+
+    $$.traducao = ss.str();
+}
+
+| TK_IF '(' E ')' BLOCO TK_ELSE BLOCO {
+    if ($3.tipo != "boolean") {
+        std::cerr << "Erro: condição do 'if' deve ser booleana, mas é '" << $3.tipo << "'\n";
+        exit(1);
+    }
+
+    std::string l_else = "L" + std::to_string(++temp_count);
+    std::string l_fim  = "L" + std::to_string(++temp_count);
+
+    std::stringstream ss;
+    ss << $3.traducao;
+    ss << "    if (!" << $3.label << ") goto " << l_else << "; // if condicional falsa\n";
+    ss << $5.traducao;
+    ss << "    goto " << l_fim << "; // fim do if\n";
+    ss << l_else << ":\n";
+    ss << $7.traducao;
+    ss << l_fim << ":\n";
+
+    $$.traducao = ss.str();
+}
+
+
+| TK_WHILE '(' E ')' BLOCO {
+    if ($3.tipo != "boolean") {
+        std::cerr << "Erro: condição do 'while' deve ser booleana, mas é '" << $3.tipo << "'\n";
+        exit(1);
+    }
+
+    std::string l_inicio = "L" + std::to_string(++temp_count);
+    std::string l_fim = "L" + std::to_string(++temp_count);
+
+    pilha_controle.push_back({LOOP, l_fim, l_inicio});
+
+    std::stringstream ss;
+    ss << l_inicio << ":\n";
+    ss << $3.traducao;
+    ss << "    if (!" << $3.label << ") goto " << l_fim << "; // condição falsa\n";
+    ss << $5.traducao;
+    ss << "    goto " << l_inicio << "; // repetir\n";
+    ss << l_fim << ":\n";
+
+    $$.traducao = ss.str();
+    pilha_controle.pop_back();
+}
+
+| TK_DO BLOCO TK_WHILE '(' E ')' ';' {
+    if ($5.tipo != "boolean") {
+        std::cerr << "Erro: condição do 'do-while' deve ser booleana, mas é '" << $5.tipo << "'\n";
+        exit(1);
+    }
+
+    std::string l_inicio = "L" + std::to_string(++temp_count);
+    std::string l_cond = "L" + std::to_string(++temp_count);
+    std::string l_fim = "L" + std::to_string(++temp_count);
+
+    pilha_controle.push_back({LOOP, l_fim, l_cond});
+
+    std::stringstream ss;
+    ss << l_inicio << ":\n";
+    ss << $2.traducao;
+    ss << l_cond << ":\n";
+    ss << $5.traducao;
+    ss << "    if (" << $5.label << ") goto " << l_inicio << "; // repetir\n";
+    ss << l_fim << ":\n";
+
+    $$.traducao = ss.str();
+    pilha_controle.pop_back();
+}
+
+| TK_FOR '(' INIT E ';' INCR ')' BLOCO {
+    if ($4.tipo != "boolean") {
+        std::cerr << "Erro: condição do 'for' deve ser booleana, mas é '" << $4.tipo << "'\n";
+        exit(1);
+    }
+
+    std::string l_inicio = "L" + std::to_string(++temp_count);
+    std::string l_cond = "L" + std::to_string(++temp_count);
+    std::string l_fim = "L" + std::to_string(++temp_count);
+
+    pilha_controle.push_back({LOOP, l_fim, l_cond});
+
+    std::stringstream ss;
+    ss << $3.traducao;      // INIT
+    ss << l_inicio << ":\n";
+    ss << $4.traducao;      // CONDIÇÃO
+    ss << "    if (!" << $4.label << ") goto " << l_fim << "; // condição falsa\n";
+    ss << $8.traducao;      // BLOCO
+    ss << l_cond << ":\n";
+    ss << $6.traducao;      // INCR
+    ss << "    goto " << l_inicio << "; // repetir laço\n";
+    ss << l_fim << ":\n";
+
+    $$.traducao = ss.str();
+    pilha_controle.pop_back();
+}
+
+| TK_SWITCH '(' E ')' '{' CASOS '}' {
+    std::string switch_var = "__switch_var" + std::to_string(++temp_count);
+    declaracoes.push_back("int " + switch_var + ";");
+
+    std::string l_fim_switch = "L" + std::to_string(++temp_count);
+    pilha_controle.push_back({SWITCH, l_fim_switch, ""});
+
+    std::stringstream ss;
+    ss << $3.traducao;
+    ss << "    " << switch_var << " = " << $3.label << "; // guarda valor do switch\n";
+
+    std::string casos_traducao = $6.traducao;
+    std::string from = "__switch_var";
+    size_t pos = 0;
+    while ((pos = casos_traducao.find(from, pos)) != std::string::npos) {
+        casos_traducao.replace(pos, from.length(), switch_var);
+        pos += switch_var.length();
+    }
+
+    ss << casos_traducao;
+    ss << l_fim_switch << ":\n";
+
+    $$.traducao = ss.str();
+    pilha_controle.pop_back();
+}
+
+| TK_BREAK ';' {
+    if (pilha_controle.empty()) {
+        std::cerr << "Erro: 'break' fora de estrutura de controle.\n";
+        exit(1);
+    }
+
+    std::stringstream ss;
+
+    // Pega o rótulo de break mais próximo
+    std::string rotulo_break = pilha_controle.back().rotulo_break;
+
+    ss << "    goto " << rotulo_break << "; // break\n";
+    $$.traducao = ss.str();
+}
+
+| TK_CONTINUE ';' {
+    bool encontrou = false;
+    std::stringstream ss;
+
+    // Procura de trás pra frente o último LOOP
+    for (int i = pilha_controle.size() - 1; i >= 0; --i) {
+        if (pilha_controle[i].tipo == LOOP) {
+            ss << "    goto " << pilha_controle[i].rotulo_continue << "; // continue\n";
+            $$.traducao = ss.str();
+            encontrou = true;
+            break;
+        }
+    }
+
+    if (!encontrou) {
+        std::cerr << "Erro: 'continue' fora de laço.\n";
+        exit(1);
+    }
+}
+
+| BLOCO {
+    $$.traducao = $1.traducao;
+}
+
+| E ';' {
+    $$.traducao = $1.traducao;
+}
+;
+
+CASOS
+: CASOS TK_CASE TK_NUM ':' LISTA_COMANDOS {
+    std::string l_case = "L" + std::to_string(++temp_count);
+
+    std::stringstream ss;
+    ss << $1.traducao;
+    ss << "    if (__switch_var == " << $3.label << ") goto " << l_case << ";\n";
+    ss << l_case << ":\n";
+    ss << "{ // escopo do case " << $3.label << "\n";
+    ss << $5.traducao;
+    ss << "} // fim case " << $3.label << "\n";
+
+    $$.traducao = ss.str();
+}
+| TK_CASE TK_NUM ':' LISTA_COMANDOS {
+    std::string l_case = "L" + std::to_string(++temp_count);
+
+    std::stringstream ss;
+    ss << "    if (__switch_var == " << $2.label << ") goto " << l_case << ";\n";
+    ss << l_case << ":\n";
+    ss << "{ // escopo do case " << $2.label << "\n";
+    ss << $4.traducao;
+    ss << "} // fim case " << $2.label << "\n";
+
+    $$.traducao = ss.str();
+}
+| CASOS TK_DEFAULT ':' LISTA_COMANDOS {
+    std::string l_default = "L" + std::to_string(++temp_count);
+
+    std::stringstream ss;
+    ss << $1.traducao;
+    ss << "    goto " << l_default << ";\n";
+    ss << l_default << ":\n";
+    ss << "{ // escopo do default\n";
+    ss << $4.traducao;
+    ss << "} // fim default\n";
+
+    $$.traducao = ss.str();
+}
+| TK_DEFAULT ':' LISTA_COMANDOS {
+    std::string l_default = "L" + std::to_string(++temp_count);
+
+    std::stringstream ss;
+    ss << "    goto " << l_default << ";\n";
+    ss << l_default << ":\n";
+    ss << "{ // escopo do default\n";
+    ss << $3.traducao;
+    ss << "} // fim default\n";
+
+    $$.traducao = ss.str();
+}
+;
+
+E : E '+' E {
+    std::string tipo_resultado = ($1.tipo == "float" || $3.tipo == "float") ? "float" : "int";
+    std::string t = gentemp(tipo_resultado);
+
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+
+    std::string traducao_temp = ss.str();
+    std::string a1 = gerar_cast($1.label, $1.tipo, tipo_resultado, traducao_temp);
+    std::string a2 = gerar_cast($3.label, $3.tipo, tipo_resultado, traducao_temp);
+
+    std::stringstream final;
+    final << traducao_temp;
+    final << "    " << t << " = " << a1 << " + " << a2 << ";\n";
+
+    $$.label = t;
+    $$.tipo = tipo_resultado;
+    $$.traducao = final.str();
+}
+| E '-' E {
+    std::string tipo_resultado = ($1.tipo == "float" || $3.tipo == "float") ? "float" : "int";
+    std::string t = gentemp(tipo_resultado);
+
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+
+    std::string traducao_temp = ss.str();
+    std::string a1 = gerar_cast($1.label, $1.tipo, tipo_resultado, traducao_temp);
+    std::string a2 = gerar_cast($3.label, $3.tipo, tipo_resultado, traducao_temp);
+
+    std::stringstream final;
+    final << traducao_temp;
+    final << "    " << t << " = " << a1 << " - " << a2 << ";\n";
+
+    $$.label = t;
+    $$.tipo = tipo_resultado;
+    $$.traducao = final.str();
+}
+| E '*' E {
+    std::string tipo_resultado = ($1.tipo == "float" || $3.tipo == "float") ? "float" : "int";
+    std::string t = gentemp(tipo_resultado);
+
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+
+    std::string traducao_temp = ss.str();
+    std::string a1 = gerar_cast($1.label, $1.tipo, tipo_resultado, traducao_temp);
+    std::string a2 = gerar_cast($3.label, $3.tipo, tipo_resultado, traducao_temp);
+
+    std::stringstream final;
+    final << traducao_temp;
+    final << "    " << t << " = " << a1 << " * " << a2 << ";\n";
+
+    $$.label = t;
+    $$.tipo = tipo_resultado;
+    $$.traducao = final.str();
+}
+| E '/' E {
+    std::string tipo_resultado = ($1.tipo == "float" || $3.tipo == "float") ? "float" : "int";
+    std::string t = gentemp(tipo_resultado);
+
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+
+    std::string traducao_temp = ss.str();
+    std::string a1 = gerar_cast($1.label, $1.tipo, tipo_resultado, traducao_temp);
+    std::string a2 = gerar_cast($3.label, $3.tipo, tipo_resultado, traducao_temp);
+
+    std::stringstream final;
+    final << traducao_temp;
+    final << "    " << t << " = " << a1 << " / " << a2 << ";\n";
+
+    $$.label = t;
+    $$.tipo = tipo_resultado;
+    $$.traducao = final.str();
+}
+
+| E TK_LT E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " < " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| E TK_LE E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " <= " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| E TK_GT E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " > " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| E TK_GE E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " >= " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| E TK_EQ E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " == " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| E TK_NE E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " != " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| E TK_AND E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " && " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| E TK_OR E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $1.traducao << $3.traducao;
+    ss << "    " << t << " = " << $1.label << " || " << $3.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| TK_NOT E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $2.traducao;
+    ss << "    " << t << " = !" << $2.label << ";\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+
+| TK_NUM {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << "    " << t << " = " << $1.label << ";\n";
+    $$.label = t;
+    $$.tipo = "int";
+    $$.traducao = ss.str();
+}
+| TK_FLOATNUM {
+    std::string t = gentemp("float");
+    std::stringstream ss;
+    ss << "    " << t << " = " << $1.label << ";\n";
+    $$.label = t;
+    $$.tipo = "float";
+    $$.traducao = ss.str();
+}
+
+| TK_ID {
+    std::string t = get_temp($1.label);
+    $$.label = t;
+    $$.tipo = get_tipo($1.label);
+    $$.traducao = "";
+}
+| TK_TRUE {
+    std::string t = gentemp("boolean");
+    std::stringstream ss;
+    ss << "    " << t << " = 1;\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| TK_FALSE {
+    std::string t = gentemp("boolean");
+    std::stringstream ss;
+    ss << "    " << t << " = 0;\n";
+    $$.label = t;
+    $$.tipo = "boolean";
+    $$.traducao = ss.str();
+}
+| TK_CHARLIT {
+    std::string t = gentemp("char");
+    std::stringstream ss;
+    ss << "    " << t << " = " << $1.label << ";\n";
+    $$.label = t;
+    $$.tipo = "char";
+    $$.traducao = ss.str();
+}
+| TK_STRLIT {
+    std::string t = gentemp("string");
+    std::stringstream ss;
+    ss << "    " << t << " = " << $1.label << ";\n";
+    $$.label = t;
+    $$.tipo = "string";
+    $$.traducao = ss.str();
+}
+
+| '(' TK_INT ')' E {
+    std::string t = gentemp("int");
+    std::stringstream ss;
+    ss << $4.traducao;
+    ss << "    " << t << " = (int) " << $4.label << ";\n";
+    $$.label = t;
+    $$.tipo = "int";
+    $$.traducao = ss.str();
+}
+
+| '(' TK_FLOAT ')' E {
+    std::string t = gentemp("float");
+    std::stringstream ss;
+    ss << $4.traducao;
+    ss << "    " << t << " = (float) " << $4.label << ";\n";
+    $$.label = t;
+    $$.tipo = "float";
+    $$.traducao = ss.str();
+}
+
+| '(' E ')' {
+    $$.label = $2.label;
+    $$.tipo = $2.tipo;
+    $$.traducao = $2.traducao;
+}
+;
+
+%%
+
+int main() {
+    yydebug = 1;
+    tabela_simbolos.push_back({});
+    yyparse();
+    return 0;
+}

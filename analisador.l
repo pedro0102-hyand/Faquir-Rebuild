@@ -72,9 +72,11 @@ ESPACO      [ \t\r\n]+
 "string"    { return TK_STRING; }
 
 \"[^\"]*\" {
-    yylval.label = yytext;
+    std::string str(yytext);
+    yylval.label = str.substr(1, str.size() - 2); // remove as aspas
     return TK_STRLIT;
 }
+
 
 
 
