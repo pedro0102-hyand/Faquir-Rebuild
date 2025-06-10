@@ -148,6 +148,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <sstream>
 #include "tipos.h"
 
 int temp_count = 0;
@@ -333,7 +334,7 @@ typedef int YYSTYPE;
 
 
 /* Line 216 of yacc.c.  */
-#line 337 "analisador.tab.c"
+#line 338 "analisador.tab.c"
 
 #ifdef short
 # undef short
@@ -647,13 +648,13 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   189,   189,   203,   204,   209,   209,   217,   224,   231,
-     238,   262,   283,   299,   299,   311,   316,   321,   326,   332,
-     337,   352,   357,   373,   387,   406,   415,   433,   445,   488,
-     496,   514,   519,   524,   529,   532,   537,   556,   559,   577,
-     588,   599,   610,   621,   629,   637,   645,   653,   661,   669,
-     677,   685,   693,   700,   707,   714,   721,   729,   736,   746,
-     755,   766
+       0,   190,   190,   204,   205,   210,   210,   218,   225,   232,
+     239,   263,   284,   300,   300,   312,   317,   322,   327,   333,
+     338,   353,   358,   374,   388,   407,   416,   434,   444,   502,
+     510,   528,   533,   538,   543,   546,   551,   570,   573,   591,
+     602,   613,   624,   635,   643,   651,   659,   667,   675,   683,
+     691,   699,   707,   714,   721,   728,   735,   743,   750,   760,
+     769,   780
 };
 #endif
 
@@ -1707,7 +1708,7 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 189 "analisador.y"
+#line 190 "analisador.y"
     {
     std::cout << "/* Compilador Faquir Rebuild */\n";
     std::cout << "#include <stdio.h>\n";
@@ -1723,21 +1724,21 @@ yyreduce:
     break;
 
   case 4:
-#line 204 "analisador.y"
+#line 205 "analisador.y"
     {
                    (yyval).traducao = (yyvsp[(1) - (2)]).traducao + (yyvsp[(2) - (2)]).traducao;
                ;}
     break;
 
   case 5:
-#line 209 "analisador.y"
+#line 210 "analisador.y"
     {
     tabela_simbolos.push_back({});  
 ;}
     break;
 
   case 6:
-#line 211 "analisador.y"
+#line 212 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(3) - (4)]).traducao;
     tabela_simbolos.pop_back();     
@@ -1745,7 +1746,7 @@ yyreduce:
     break;
 
   case 7:
-#line 217 "analisador.y"
+#line 218 "analisador.y"
     {
     std::string l_fim_switch = genlabel();
     pilha_controle.push_back({SWITCH, l_fim_switch, ""});
@@ -1754,7 +1755,7 @@ yyreduce:
     break;
 
   case 8:
-#line 224 "analisador.y"
+#line 225 "analisador.y"
     {
     std::string var_temp = get_temp((yyvsp[(1) - (4)]).label);
     std::string var_tipo = get_tipo((yyvsp[(1) - (4)]).label);
@@ -1764,7 +1765,7 @@ yyreduce:
     break;
 
   case 9:
-#line 231 "analisador.y"
+#line 232 "analisador.y"
     {
     std::string var_temp = get_temp((yyvsp[(1) - (3)]).label);
     std::string var_tipo = get_tipo((yyvsp[(1) - (3)]).label);
@@ -1774,7 +1775,7 @@ yyreduce:
     break;
 
   case 10:
-#line 238 "analisador.y"
+#line 239 "analisador.y"
     {
     if ((yyvsp[(2) - (4)]).tipo != "boolean") {
         std::cerr << "Erro: condição do 'for' deve ser booleana, mas é '" << (yyvsp[(2) - (4)]).tipo << "'\n";
@@ -1801,7 +1802,7 @@ yyreduce:
     break;
 
   case 11:
-#line 262 "analisador.y"
+#line 263 "analisador.y"
     {
     if ((yyvsp[(3) - (4)]).tipo != "boolean") {
         std::cerr << "Erro: condição do 'while' deve ser booleana, mas é '" << (yyvsp[(3) - (4)]).tipo << "'\n";
@@ -1825,7 +1826,7 @@ yyreduce:
     break;
 
   case 12:
-#line 283 "analisador.y"
+#line 284 "analisador.y"
     {
     std::string l_inicio = genlabel();  // início do bloco
     std::string l_cond = genlabel();    // ponto da condição
@@ -1842,7 +1843,7 @@ yyreduce:
     break;
 
   case 14:
-#line 299 "analisador.y"
+#line 300 "analisador.y"
     {
     std::string var_temp = get_temp((yyvsp[(1) - (4)]).label);
     std::string var_tipo = get_tipo((yyvsp[(1) - (4)]).label);
@@ -1857,7 +1858,7 @@ yyreduce:
     break;
 
   case 15:
-#line 311 "analisador.y"
+#line 312 "analisador.y"
     {
     declarar((yyvsp[(2) - (3)]).label, "int");
     (yyval).traducao = "";
@@ -1865,7 +1866,7 @@ yyreduce:
     break;
 
   case 16:
-#line 316 "analisador.y"
+#line 317 "analisador.y"
     {
     declarar((yyvsp[(2) - (3)]).label, "float");
     (yyval).traducao = "";
@@ -1873,7 +1874,7 @@ yyreduce:
     break;
 
   case 17:
-#line 321 "analisador.y"
+#line 322 "analisador.y"
     {
     declarar((yyvsp[(2) - (3)]).label, "char");
     (yyval).traducao = "";
@@ -1881,7 +1882,7 @@ yyreduce:
     break;
 
   case 18:
-#line 326 "analisador.y"
+#line 327 "analisador.y"
     {
     declarar((yyvsp[(2) - (3)]).label, "boolean");
     (yyval).traducao = "";
@@ -1889,7 +1890,7 @@ yyreduce:
     break;
 
   case 19:
-#line 332 "analisador.y"
+#line 333 "analisador.y"
     {
     declarar((yyvsp[(2) - (3)]).label, "string");
     (yyval).traducao = "";
@@ -1897,7 +1898,7 @@ yyreduce:
     break;
 
   case 20:
-#line 337 "analisador.y"
+#line 338 "analisador.y"
     {
     std::string temp = get_temp((yyvsp[(3) - (5)]).label);
     std::string tipo = get_tipo((yyvsp[(3) - (5)]).label);
@@ -1915,14 +1916,14 @@ yyreduce:
     break;
 
   case 21:
-#line 352 "analisador.y"
+#line 353 "analisador.y"
     {
     (yyval).traducao = "    printf(\"%s\\n\", \"" + (yyvsp[(3) - (5)]).label + "\");\n";
 ;}
     break;
 
   case 22:
-#line 357 "analisador.y"
+#line 358 "analisador.y"
     {
     std::string temp = get_temp((yyvsp[(3) - (5)]).label);
     std::string tipo = get_tipo((yyvsp[(3) - (5)]).label);
@@ -1941,7 +1942,7 @@ yyreduce:
     break;
 
   case 23:
-#line 373 "analisador.y"
+#line 374 "analisador.y"
     {
     if ((yyvsp[(3) - (5)]).tipo != "boolean") {
         std::cerr << "Erro: condição do 'if' deve ser booleana, mas é '" << (yyvsp[(3) - (5)]).tipo << "'\n";
@@ -1958,7 +1959,7 @@ yyreduce:
     break;
 
   case 24:
-#line 387 "analisador.y"
+#line 388 "analisador.y"
     {
     if ((yyvsp[(3) - (7)]).tipo != "boolean") {
         std::cerr << "Erro: condição do 'if' deve ser booleana, mas é '" << (yyvsp[(3) - (7)]).tipo << "'\n";
@@ -1979,7 +1980,7 @@ yyreduce:
     break;
 
   case 25:
-#line 406 "analisador.y"
+#line 407 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(1) - (2)]).traducao;
     (yyval).traducao += (yyvsp[(2) - (2)]).traducao;
@@ -1991,7 +1992,7 @@ yyreduce:
     break;
 
   case 26:
-#line 415 "analisador.y"
+#line 416 "analisador.y"
     {
     if ((yyvsp[(5) - (7)]).tipo != "boolean") {
         std::cerr << "Erro: condição do 'do-while' deve ser booleana, mas é '" << (yyvsp[(5) - (7)]).tipo << "'\n";
@@ -2010,7 +2011,7 @@ yyreduce:
     break;
 
   case 27:
-#line 433 "analisador.y"
+#line 434 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(3) - (5)]).traducao;
     (yyval).traducao += (yyvsp[(5) - (5)]).traducao;                  // corpo do laço
@@ -2023,50 +2024,63 @@ yyreduce:
     break;
 
   case 28:
-#line 445 "analisador.y"
+#line 444 "analisador.y"
     {
     if ((yyvsp[(3) - (8)]).tipo != "int") {
         std::cerr << "Erro: expressão do 'switch' deve ser do tipo int, mas é '" << (yyvsp[(3) - (8)]).tipo << "'\n";
         exit(1);
     }
 
-    // Variável temporária para armazenar o valor da expressão do switch
+    // Nome único da variável temporária do switch
     std::string switch_var = "__switch_var" + std::to_string(++temp_count);
     declaracoes.push_back("int " + switch_var + ";");
 
-    // Código da avaliação da expressão do switch
+    // Começa com a tradução da expressão
     std::string codigo = (yyvsp[(3) - (8)]).traducao;
     codigo += "    " + switch_var + " = " + (yyvsp[(3) - (8)]).label + "; // guarda valor do switch\n";
 
-    // Recupera o corpo dos casos
-    std::string casos_traducao = (yyvsp[(7) - (8)]).traducao;  // <-- importante: $7 é CASOS
+    // Divide a tradução dos casos entre ifs e blocos
+    std::string casos_if;
+    std::string blocos_label;
 
-    // Substitui "__switch_var" pelo nome real
-    std::string from = "__switch_var";
+    std::stringstream ss((yyvsp[(7) - (8)]).traducao);
+    std::string linha;
+    while (getline(ss, linha)) {
+        if (linha.find("if (__switch_var") != std::string::npos) {
+            casos_if += linha + "\n";
+        } else {
+            blocos_label += linha + "\n";
+        }
+    }
+
+    // Substitui "__switch_var" pelo nome real gerado (ex: __switch_var3)
     size_t pos = 0;
-    while ((pos = casos_traducao.find(from, pos)) != std::string::npos) {
-        casos_traducao.replace(pos, from.length(), switch_var);
+    while ((pos = casos_if.find("__switch_var", pos)) != std::string::npos) {
+        casos_if.replace(pos, 13, switch_var);
         pos += switch_var.length();
     }
 
-    // Se existir um label default, insere goto para ele
-    std::string l_default;
-    size_t pos_default = casos_traducao.find("Ldefault:");
-    if (pos_default != std::string::npos) {
-        l_default = "Ldefault";
-        codigo += "    goto " + l_default + ";\n";
+    pos = 0;
+    while ((pos = blocos_label.find("__switch_var", pos)) != std::string::npos) {
+        blocos_label.replace(pos, 13, switch_var);
+        pos += switch_var.length();
     }
 
-    // Fecha o bloco do switch
+    // Se houver bloco default, insere um goto para ele ao fim dos ifs
+    if (blocos_label.find("Ldefault:") != std::string::npos) {
+        casos_if += "    goto Ldefault;\n";
+    }
+
+    // Fecha o bloco switch com o label final
     std::string l_fim_switch = (yyvsp[(5) - (8)]).label;
     pilha_controle.pop_back();
 
-    (yyval).traducao = codigo + casos_traducao + l_fim_switch + ":\n";
+    (yyval).traducao = codigo + casos_if + blocos_label + l_fim_switch + ":\n";
 ;}
     break;
 
   case 29:
-#line 488 "analisador.y"
+#line 502 "analisador.y"
     {
     if (pilha_controle.empty()) {
         std::cerr << "Erro: 'break' fora de estrutura de controle.\n";
@@ -2077,7 +2091,7 @@ yyreduce:
     break;
 
   case 30:
-#line 496 "analisador.y"
+#line 510 "analisador.y"
     {
     bool encontrou = false;
     for (int i = pilha_controle.size() - 1; i >= 0; --i) {
@@ -2095,42 +2109,42 @@ yyreduce:
     break;
 
   case 31:
-#line 514 "analisador.y"
+#line 528 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(1) - (1)]).traducao;
 ;}
     break;
 
   case 32:
-#line 519 "analisador.y"
+#line 533 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(1) - (2)]).traducao;
 ;}
     break;
 
   case 33:
-#line 524 "analisador.y"
+#line 538 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(1) - (2)]).traducao + (yyvsp[(2) - (2)]).traducao;
 ;}
     break;
 
   case 34:
-#line 529 "analisador.y"
+#line 543 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(1) - (2)]).traducao + (yyvsp[(2) - (2)]).traducao;
 ;}
     break;
 
   case 35:
-#line 532 "analisador.y"
+#line 546 "analisador.y"
     {
     (yyval).traducao = (yyvsp[(1) - (1)]).traducao;
 ;}
     break;
 
   case 36:
-#line 537 "analisador.y"
+#line 551 "analisador.y"
     {
     std::string l_case = genlabel();
     std::string l_fim;
@@ -2149,14 +2163,14 @@ yyreduce:
     break;
 
   case 37:
-#line 556 "analisador.y"
+#line 570 "analisador.y"
     {
     (yyval).traducao = "";
 ;}
     break;
 
   case 38:
-#line 559 "analisador.y"
+#line 573 "analisador.y"
     {
     std::string l_fim;
 
@@ -2173,7 +2187,7 @@ yyreduce:
     break;
 
   case 39:
-#line 577 "analisador.y"
+#line 591 "analisador.y"
     {
     std::string tipo_resultado = ((yyvsp[(1) - (3)]).tipo == "float" || (yyvsp[(3) - (3)]).tipo == "float") ? "float" : "int";
     std::string t = gentemp(tipo_resultado);
@@ -2187,7 +2201,7 @@ yyreduce:
     break;
 
   case 40:
-#line 588 "analisador.y"
+#line 602 "analisador.y"
     {
     std::string tipo_resultado = ((yyvsp[(1) - (3)]).tipo == "float" || (yyvsp[(3) - (3)]).tipo == "float") ? "float" : "int";
     std::string t = gentemp(tipo_resultado);
@@ -2201,7 +2215,7 @@ yyreduce:
     break;
 
   case 41:
-#line 599 "analisador.y"
+#line 613 "analisador.y"
     {
     std::string tipo_resultado = ((yyvsp[(1) - (3)]).tipo == "float" || (yyvsp[(3) - (3)]).tipo == "float") ? "float" : "int";
     std::string t = gentemp(tipo_resultado);
@@ -2215,7 +2229,7 @@ yyreduce:
     break;
 
   case 42:
-#line 610 "analisador.y"
+#line 624 "analisador.y"
     {
     std::string tipo_resultado = ((yyvsp[(1) - (3)]).tipo == "float" || (yyvsp[(3) - (3)]).tipo == "float") ? "float" : "int";
     std::string t = gentemp(tipo_resultado);
@@ -2229,7 +2243,7 @@ yyreduce:
     break;
 
   case 43:
-#line 621 "analisador.y"
+#line 635 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2240,7 +2254,7 @@ yyreduce:
     break;
 
   case 44:
-#line 629 "analisador.y"
+#line 643 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2251,7 +2265,7 @@ yyreduce:
     break;
 
   case 45:
-#line 637 "analisador.y"
+#line 651 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2262,7 +2276,7 @@ yyreduce:
     break;
 
   case 46:
-#line 645 "analisador.y"
+#line 659 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2273,7 +2287,7 @@ yyreduce:
     break;
 
   case 47:
-#line 653 "analisador.y"
+#line 667 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2284,7 +2298,7 @@ yyreduce:
     break;
 
   case 48:
-#line 661 "analisador.y"
+#line 675 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2295,7 +2309,7 @@ yyreduce:
     break;
 
   case 49:
-#line 669 "analisador.y"
+#line 683 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2306,7 +2320,7 @@ yyreduce:
     break;
 
   case 50:
-#line 677 "analisador.y"
+#line 691 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2317,7 +2331,7 @@ yyreduce:
     break;
 
   case 51:
-#line 685 "analisador.y"
+#line 699 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2328,7 +2342,7 @@ yyreduce:
     break;
 
   case 52:
-#line 693 "analisador.y"
+#line 707 "analisador.y"
     {
     std::string t = gentemp("int");
     (yyval).label = t;
@@ -2338,7 +2352,7 @@ yyreduce:
     break;
 
   case 53:
-#line 700 "analisador.y"
+#line 714 "analisador.y"
     {
     std::string t = gentemp("float");
     (yyval).label = t;
@@ -2348,7 +2362,7 @@ yyreduce:
     break;
 
   case 54:
-#line 707 "analisador.y"
+#line 721 "analisador.y"
     {
     std::string t = get_temp((yyvsp[(1) - (1)]).label);
     (yyval).label = t;
@@ -2358,7 +2372,7 @@ yyreduce:
     break;
 
   case 55:
-#line 714 "analisador.y"
+#line 728 "analisador.y"
     {
     std::string t = gentemp("boolean");
     (yyval).label = t;
@@ -2368,7 +2382,7 @@ yyreduce:
     break;
 
   case 56:
-#line 721 "analisador.y"
+#line 735 "analisador.y"
     {
     std::string t = gentemp("boolean");
     (yyval).label = t;
@@ -2378,7 +2392,7 @@ yyreduce:
     break;
 
   case 57:
-#line 729 "analisador.y"
+#line 743 "analisador.y"
     {
     std::string t = gentemp("char");
     (yyval).label = t;
@@ -2388,7 +2402,7 @@ yyreduce:
     break;
 
   case 58:
-#line 736 "analisador.y"
+#line 750 "analisador.y"
     {
     std::string t = gentemp("string");
     (yyval).label = t;
@@ -2398,7 +2412,7 @@ yyreduce:
     break;
 
   case 59:
-#line 746 "analisador.y"
+#line 760 "analisador.y"
     {
     std::string cast = gentemp("int");
 
@@ -2410,7 +2424,7 @@ yyreduce:
     break;
 
   case 60:
-#line 755 "analisador.y"
+#line 769 "analisador.y"
     {
     std::string cast = gentemp("float");
 
@@ -2422,7 +2436,7 @@ yyreduce:
     break;
 
   case 61:
-#line 766 "analisador.y"
+#line 780 "analisador.y"
     {
     (yyval).label = (yyvsp[(2) - (3)]).label;
     (yyval).tipo = (yyvsp[(2) - (3)]).tipo;
@@ -2432,7 +2446,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2436 "analisador.tab.c"
+#line 2450 "analisador.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2646,7 +2660,7 @@ yyreturn:
 }
 
 
-#line 773 "analisador.y"
+#line 787 "analisador.y"
 
 
 int main() {

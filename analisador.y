@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <sstream>
 #include "tipos.h"
 
 int temp_count = 0;
@@ -440,47 +441,60 @@ COMANDO : | TK_ID '=' E ';' {
     pilha_controle.pop_back();
 }
 
-
-
 | TK_SWITCH '(' E ')' SWITCH_INIT '{' CASOS '}' {
     if ($3.tipo != "int") {
         std::cerr << "Erro: expressão do 'switch' deve ser do tipo int, mas é '" << $3.tipo << "'\n";
         exit(1);
     }
 
-    // Variável temporária para armazenar o valor da expressão do switch
+    // Nome único da variável temporária do switch
     std::string switch_var = "__switch_var" + std::to_string(++temp_count);
     declaracoes.push_back("int " + switch_var + ";");
 
-    // Código da avaliação da expressão do switch
+    // Começa com a tradução da expressão
     std::string codigo = $3.traducao;
     codigo += "    " + switch_var + " = " + $3.label + "; // guarda valor do switch\n";
 
-    // Recupera o corpo dos casos
-    std::string casos_traducao = $7.traducao;  // <-- importante: $7 é CASOS
+    // Divide a tradução dos casos entre ifs e blocos
+    std::string casos_if;
+    std::string blocos_label;
 
-    // Substitui "__switch_var" pelo nome real
-    std::string from = "__switch_var";
+    std::stringstream ss($7.traducao);
+    std::string linha;
+    while (getline(ss, linha)) {
+        if (linha.find("if (__switch_var") != std::string::npos) {
+            casos_if += linha + "\n";
+        } else {
+            blocos_label += linha + "\n";
+        }
+    }
+
+    // Substitui "__switch_var" pelo nome real gerado (ex: __switch_var3)
     size_t pos = 0;
-    while ((pos = casos_traducao.find(from, pos)) != std::string::npos) {
-        casos_traducao.replace(pos, from.length(), switch_var);
+    while ((pos = casos_if.find("__switch_var", pos)) != std::string::npos) {
+        casos_if.replace(pos, 13, switch_var);
         pos += switch_var.length();
     }
 
-    // Se existir um label default, insere goto para ele
-    std::string l_default;
-    size_t pos_default = casos_traducao.find("Ldefault:");
-    if (pos_default != std::string::npos) {
-        l_default = "Ldefault";
-        codigo += "    goto " + l_default + ";\n";
+    pos = 0;
+    while ((pos = blocos_label.find("__switch_var", pos)) != std::string::npos) {
+        blocos_label.replace(pos, 13, switch_var);
+        pos += switch_var.length();
     }
 
-    // Fecha o bloco do switch
+    // Se houver bloco default, insere um goto para ele ao fim dos ifs
+    if (blocos_label.find("Ldefault:") != std::string::npos) {
+        casos_if += "    goto Ldefault;\n";
+    }
+
+    // Fecha o bloco switch com o label final
     std::string l_fim_switch = $5.label;
     pilha_controle.pop_back();
 
-    $$.traducao = codigo + casos_traducao + l_fim_switch + ":\n";
+    $$.traducao = codigo + casos_if + blocos_label + l_fim_switch + ":\n";
 }
+
+
 
 
 
