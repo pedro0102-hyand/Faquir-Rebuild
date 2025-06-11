@@ -187,7 +187,19 @@ std::string gerar_cast(std::string origem, std::string tipo_origem, std::string 
 
 %%
 
-S : TK_INT TK_MAIN '{' LISTA_COMANDOS '}' {
+S : DECLS TK_INT TK_MAIN '{' LISTA_COMANDOS '}' {
+    std::cout << "/* Compilador Faquir Rebuild */\n";
+    std::cout << "#include <stdio.h>\n";
+    std::cout << "int main(void) {\n";
+
+    for (const std::string& decl : declaracoes)
+        std::cout << "    " << decl << "\n";
+
+    std::cout << $5.traducao;
+    std::cout << "    return 0;\n";
+    std::cout << "}\n";
+}
+| TK_INT TK_MAIN '{' LISTA_COMANDOS '}' {
     std::cout << "/* Compilador Faquir Rebuild */\n";
     std::cout << "#include <stdio.h>\n";
     std::cout << "int main(void) {\n";
@@ -201,11 +213,39 @@ S : TK_INT TK_MAIN '{' LISTA_COMANDOS '}' {
 }
 ;
 
+
 LISTA_COMANDOS : COMANDO
                | LISTA_COMANDOS COMANDO {
                    $$.traducao = $1.traducao + $2.traducao;
                }
 ;
+
+DECLS : DECL
+      | DECLS DECL
+;
+
+DECL : TK_INT TK_ID ';' {
+    declarar($2.label, "int");
+    $$.traducao = "";
+}
+| TK_FLOAT TK_ID ';' {
+    declarar($2.label, "float");
+    $$.traducao = "";
+}
+| TK_CHAR TK_ID ';' {
+    declarar($2.label, "char");
+    $$.traducao = "";
+}
+| TK_BOOLEAN TK_ID ';' {
+    declarar($2.label, "boolean");
+    $$.traducao = "";
+}
+| TK_STRING TK_ID ';' {
+    declarar($2.label, "string");
+    $$.traducao = "";
+}
+;
+
 
 BLOCO : '{' {
     tabela_simbolos.push_back({});  
@@ -353,6 +393,20 @@ COMANDO : | TK_ID '=' E ';' {
 | TK_PRINT '(' TK_STRLIT ')' ';' {
     $$.traducao = "    printf(\"%s\\n\", \"" + $3.label + "\");\n";
 }
+
+| TK_PRINT '(' E ')' ';' {
+    std::string fmt;
+    if ($3.tipo == "int") fmt = "%d";
+    else if ($3.tipo == "float") fmt = "%f";
+    else if ($3.tipo == "char") fmt = "%c";
+    else if ($3.tipo == "boolean") fmt = "%d";
+    else if ($3.tipo == "string") fmt = "%s";
+    else fmt = "??";
+
+    $$.traducao = $3.traducao;
+    $$.traducao += "    printf(\"" + fmt + "\\n\", " + $3.label + ");\n";
+}
+
 
 
 | TK_READ '(' TK_ID ')' ';' {

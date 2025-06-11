@@ -1,26 +1,43 @@
-int main {
-    boolean flag;
-    int codigo;
-
-    flag = false;
-
-    if (flag == true) {
-        codigo = 1;
-    } else {
-        codigo = 2;
+int main{
+    int i;
+    for(i=5;i>0;i=i-1){
+        print (i);
     }
-
-    switch(codigo) {
-        case 1: {
-            print(codigo); 
-            break;
-        }
-        case 2: {
-            print(codigo); 
-            break;
-        }
-    }
+    print("Fim do Loop");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
