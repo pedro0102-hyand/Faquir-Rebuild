@@ -1,10 +1,25 @@
-int main{
-    int i;
-    for(i=5;i>0;i=i-1){
-        print (i);
-    }
-    print("Fim do Loop");
+int main {
+    string cidade = "Cabaceirras";
+    print(cidade);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

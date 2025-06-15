@@ -202,6 +202,8 @@ S : DECLS TK_INT TK_MAIN '{' LISTA_COMANDOS '}' {
 | TK_INT TK_MAIN '{' LISTA_COMANDOS '}' {
     std::cout << "/* Compilador Faquir Rebuild */\n";
     std::cout << "#include <stdio.h>\n";
+    std::cout << "#include <stdlib.h>\n";
+    std::cout << "#include <string.h>\n";
     std::cout << "int main(void) {\n";
 
     for (const std::string& decl : declaracoes)
@@ -224,27 +226,52 @@ DECLS : DECL
       | DECLS DECL
 ;
 
-DECL : TK_INT TK_ID ';' {
+DECL
+: TK_INT TK_ID ';' {
     declarar($2.label, "int");
     $$.traducao = "";
 }
+| TK_INT TK_ID '=' E ';' {
+    declarar($2.label, "int");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "int", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
+
 | TK_FLOAT TK_ID ';' {
     declarar($2.label, "float");
     $$.traducao = "";
 }
+| TK_FLOAT TK_ID '=' E ';' {
+    declarar($2.label, "float");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "float", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
+
 | TK_CHAR TK_ID ';' {
     declarar($2.label, "char");
     $$.traducao = "";
 }
+| TK_CHAR TK_ID '=' E ';' {
+    declarar($2.label, "char");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "char", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
+
 | TK_BOOLEAN TK_ID ';' {
     declarar($2.label, "boolean");
     $$.traducao = "";
 }
-| TK_STRING TK_ID ';' {
-    declarar($2.label, "string");
-    $$.traducao = "";
+| TK_BOOLEAN TK_ID '=' E ';' {
+    declarar($2.label, "boolean");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "boolean", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
 }
 ;
+
 
 
 BLOCO : '{' {
@@ -340,14 +367,20 @@ DO_INIT : TK_DO {
 COMANDO : | TK_ID '=' E ';' {
     std::string var_temp = get_temp($1.label);
     std::string var_tipo = get_tipo($1.label);
+    std::ostringstream ss;
 
-    if ($3.traducao == "") {
-        $$.traducao = "    " + var_temp + " = " + $3.label + ";\n";
+    ss << $3.traducao;
+
+    if (var_tipo == "string") {
+        ss << "    " << var_temp << " = (char*) malloc(strlen(" << $3.label << ") + 1);\n";
+        ss << "    strcpy(" << var_temp << ", " << $3.label << ");\n";
     } else {
-        $$.traducao = $3.traducao;
-        $$.traducao += "    " + var_temp + " = " + $3.label + ";\n";
+        ss << "    " << var_temp << " = " << $3.label << ";\n";
     }
+
+    $$.traducao = ss.str();
 }
+
 
 | TK_INT TK_ID ';' {
     declarar($2.label, "int");
@@ -369,11 +402,57 @@ COMANDO : | TK_ID '=' E ';' {
     $$.traducao = "";
 }
 
-
 | TK_STRING TK_ID ';' {
     declarar($2.label, "string");
-    $$.traducao = "";
+    std::ostringstream ss;
+    ss << "    " << get_temp($2.label) << " = (char*) malloc(100);\n";
+    $$.traducao = ss.str();
 }
+
+
+
+| TK_STRING TK_ID '=' E ';' {
+    declarar($2.label, "string");
+    std::string temp = get_temp($2.label);
+    std::ostringstream ss;
+
+    ss << $4.traducao;
+
+    ss << "    " << temp << " = (char*) malloc(strlen(" << $4.label << ") + 1);\n";
+    ss << "    strcpy(" << temp << ", " << $4.label << ");\n";
+
+    $$.traducao = ss.str();
+}
+
+
+| TK_INT TK_ID '=' E ';' {
+    declarar($2.label, "int");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "int", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
+
+| TK_FLOAT TK_ID '=' E ';' {
+    declarar($2.label, "float");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "float", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
+
+| TK_CHAR TK_ID '=' E ';' {
+    declarar($2.label, "char");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "char", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
+
+| TK_BOOLEAN TK_ID '=' E ';' {
+    declarar($2.label, "boolean");
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, "boolean", $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
+
 
 | TK_PRINT '(' TK_ID ')' ';' {
     std::string temp = get_temp($3.label);
@@ -803,10 +882,14 @@ E : E '+' E {
 
 | TK_STRLIT {
     std::string t = gentemp("string");
+    std::ostringstream ss;
+    ss << "    " << t << " = (char*) malloc(strlen(\"" << $1.label << "\") + 1);\n";
+    ss << "    strcpy(" << t << ", \"" << $1.label << "\");\n";
     $$.label = t;
     $$.tipo = "string";
-    $$.traducao = "    " + t + " = \"" + $1.label + "\";\n";
+    $$.traducao = ss.str();
 }
+
 
 
 
