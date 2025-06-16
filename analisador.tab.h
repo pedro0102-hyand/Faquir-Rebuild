@@ -72,7 +72,13 @@
      TK_DEFAULT = 288,
      TK_BREAK = 289,
      TK_CONTINUE = 290,
-     TK_STRLIT = 291
+     TK_STRLIT = 291,
+     TK_ADDEQ = 292,
+     TK_SUBEQ = 293,
+     TK_MULTEQ = 294,
+     TK_DIVEQ = 295,
+     TK_INC = 296,
+     TK_DEC = 297
    };
 #endif
 /* Tokens.  */
@@ -110,6 +116,12 @@
 #define TK_BREAK 289
 #define TK_CONTINUE 290
 #define TK_STRLIT 291
+#define TK_ADDEQ 292
+#define TK_SUBEQ 293
+#define TK_MULTEQ 294
+#define TK_DIVEQ 295
+#define TK_INC 296
+#define TK_DEC 297
 
 
 

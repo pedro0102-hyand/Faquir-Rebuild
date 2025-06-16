@@ -170,6 +170,9 @@ std::string gerar_cast(std::string origem, std::string tipo_origem, std::string 
 %token TK_FOR
 %token TK_SWITCH TK_CASE TK_DEFAULT
 %token TK_BREAK TK_CONTINUE TK_STRLIT
+%token TK_ADDEQ TK_SUBEQ TK_MULTEQ TK_DIVEQ
+%token TK_INC TK_DEC
+
 
 
 
@@ -296,12 +299,66 @@ INIT : TK_ID '=' E ';' {
     $$.traducao = t;
 };
 
-INCR : TK_ID '=' E {
+INCR 
+: TK_ID '=' E {
     std::string var_temp = get_temp($1.label);
     std::string var_tipo = get_tipo($1.label);
     std::string t = $3.traducao + "    " + var_temp + " = " + $3.label + ";\n";
     $$.traducao = t;
-};
+}
+| TK_ID TK_ADDEQ E {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " + " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+| TK_ID TK_SUBEQ E {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " - " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+| TK_ID TK_MULTEQ E {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " * " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+| TK_ID TK_DIVEQ E {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " / " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+| TK_ID TK_INC {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    $$.traducao = "    " + temp + " = " + var + " + 1;\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+| TK_ID TK_DEC {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    $$.traducao = "    " + temp + " = " + var + " - 1;\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+
 
 FOR_INIT : INIT E ';' INCR {
     if ($2.tipo != "boolean") {
@@ -452,6 +509,64 @@ COMANDO : | TK_ID '=' E ';' {
     std::string cast = gerar_cast($4.label, $4.tipo, "boolean", $4.traducao);
     $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
 }
+
+| TK_ID TK_ADDEQ E ';' {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " + " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+| TK_ID TK_SUBEQ E ';' {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " - " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+| TK_ID TK_MULTEQ E ';' {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " * " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+| TK_ID TK_DIVEQ E ';' {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+    $$.traducao = $3.traducao;
+    $$.traducao += "    " + temp + " = " + var + " / " + cast + ";\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+| TK_ID TK_INC ';' {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    $$.traducao = "    " + temp + " = " + var + " + 1;\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+| TK_ID TK_DEC ';' {
+    std::string var = get_temp($1.label);
+    std::string tipo = get_tipo($1.label);
+    std::string temp = gentemp(tipo);
+    $$.traducao = "    " + temp + " = " + var + " - 1;\n";
+    $$.traducao += "    " + var + " = " + temp + ";\n";
+}
+
+
 
 
 | TK_PRINT '(' TK_ID ')' ';' {
@@ -836,6 +951,37 @@ E : E '+' E {
     $$.traducao = $2.traducao;
     $$.traducao += "    " + t + " = !" + $2.label + ";\n";
 }
+
+| '-' E {
+    std::string tipo = $2.tipo;
+    if (tipo != "int" && tipo != "float") {
+        std::cerr << "Erro: operador unário '-' só pode ser aplicado a int ou float (não a '" << tipo << "')\n";
+        exit(1);
+    }
+    std::string temp = gentemp(tipo);
+    $$.label = temp;
+    $$.tipo = tipo;
+    $$.traducao = $2.traducao;
+    $$.traducao += "    " + temp + " = -" + $2.label + ";\n";
+}
+
+| '+' E {
+    $$.label = $2.label;
+    $$.tipo = $2.tipo;
+    $$.traducao = $2.traducao; // não altera o valor
+}
+
+| '~' E {
+    if ($2.tipo != "int") {
+        std::cerr << "Erro: operador '~' só pode ser aplicado a inteiros.\n";
+        exit(1);
+    }
+    std::string t = gentemp("int");
+    $$.label = t;
+    $$.tipo = "int";
+    $$.traducao = $2.traducao + "    " + t + " = ~" + $2.label + ";\n";
+}
+
 
 | TK_NUM {
     std::string t = gentemp("int");

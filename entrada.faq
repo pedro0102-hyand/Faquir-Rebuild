@@ -1,7 +1,29 @@
 int main {
-    string cidade = "Cabaceirras";
-    print(cidade);
+    int i = 1;
+    while(i < 4) {
+        print(i);
+        i += 1;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -51,6 +51,16 @@ ESPACO      [ \t\r\n]+
 "||"        { return TK_OR; }
 "!"         { return TK_NOT; }
 
+"+="        { return TK_ADDEQ; }
+"-="        { return TK_SUBEQ; }
+"*="        { return TK_MULTEQ; }
+"/="        { return TK_DIVEQ; }
+
+"++"    { return TK_INC; }
+"--"    { return TK_DEC; }
+
+
+
 "="         { return '='; }
 
 "char"      { return TK_CHAR; }
