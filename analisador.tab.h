@@ -78,7 +78,8 @@
      TK_MULTEQ = 294,
      TK_DIVEQ = 295,
      TK_INC = 296,
-     TK_DEC = 297
+     TK_DEC = 297,
+     TK_POW = 298
    };
 #endif
 /* Tokens.  */
@@ -122,6 +123,7 @@
 #define TK_DIVEQ 295
 #define TK_INC 296
 #define TK_DEC 297
+#define TK_POW 298
 
 
 

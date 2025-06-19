@@ -1,10 +1,13 @@
 int main {
-    int i = 1;
-    while(i < 4) {
-        print(i);
-        i += 1;
-    }
+    int base = 3;
+    int expoente = 4;
+    int resultado = base ** expoente;
+    print(resultado);
 }
+
+
+
+
 
 
 

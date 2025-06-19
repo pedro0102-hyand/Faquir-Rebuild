@@ -39,6 +39,8 @@ ESPACO      [ \t\r\n]+
 "-"         { return '-'; }
 "*"         { return '*'; }
 "/"         { return '/'; }
+"**"    { return TK_POW; }
+
 
 "=="        { return TK_EQ; }
 "!="        { return TK_NE; }
