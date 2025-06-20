@@ -73,13 +73,19 @@
      TK_BREAK = 289,
      TK_CONTINUE = 290,
      TK_STRLIT = 291,
-     TK_ADDEQ = 292,
-     TK_SUBEQ = 293,
-     TK_MULTEQ = 294,
-     TK_DIVEQ = 295,
-     TK_INC = 296,
-     TK_DEC = 297,
-     TK_POW = 298
+     TK_BREAKALL = 292,
+     TK_ADDEQ = 293,
+     TK_SUBEQ = 294,
+     TK_MULTEQ = 295,
+     TK_DIVEQ = 296,
+     TK_INC = 297,
+     TK_DEC = 298,
+     TK_POW = 299,
+     TK_VAR = 300,
+     TK_INTDIV = 301,
+     TK_LSHIFT = 302,
+     TK_RSHIFT = 303,
+     TK_EXIT = 304
    };
 #endif
 /* Tokens.  */
@@ -117,13 +123,19 @@
 #define TK_BREAK 289
 #define TK_CONTINUE 290
 #define TK_STRLIT 291
-#define TK_ADDEQ 292
-#define TK_SUBEQ 293
-#define TK_MULTEQ 294
-#define TK_DIVEQ 295
-#define TK_INC 296
-#define TK_DEC 297
-#define TK_POW 298
+#define TK_BREAKALL 292
+#define TK_ADDEQ 293
+#define TK_SUBEQ 294
+#define TK_MULTEQ 295
+#define TK_DIVEQ 296
+#define TK_INC 297
+#define TK_DEC 298
+#define TK_POW 299
+#define TK_VAR 300
+#define TK_INTDIV 301
+#define TK_LSHIFT 302
+#define TK_RSHIFT 303
+#define TK_EXIT 304
 
 
 

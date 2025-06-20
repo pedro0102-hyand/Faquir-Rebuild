@@ -13,9 +13,12 @@ ESPACO      [ \t\r\n]+
 "float"     { return TK_FLOAT; }
 "main"      { return TK_MAIN; }
 
+"var"   { return TK_VAR; }
+
 "if"        { return TK_IF; }
 "else"      { return TK_ELSE; }
 
+break[ \t]+all   { return TK_BREAKALL; }
 "break"     { return TK_BREAK; }
 "continue"  { return TK_CONTINUE; }
 
@@ -31,6 +34,8 @@ ESPACO      [ \t\r\n]+
 "default"   { return TK_DEFAULT; }
 
 
+
+
 "{"         { return '{'; }
 "}"         { return '}'; }
 "("         { return '('; }
@@ -39,7 +44,13 @@ ESPACO      [ \t\r\n]+
 "-"         { return '-'; }
 "*"         { return '*'; }
 "/"         { return '/'; }
-"**"    { return TK_POW; }
+"**"        { return TK_POW; }
+
+"//"    { return TK_INTDIV; }    
+"%"     { return '%'; }
+"<<"    { return TK_LSHIFT; }
+">>"    { return TK_RSHIFT; }
+
 
 
 "=="        { return TK_EQ; }
@@ -82,6 +93,8 @@ ESPACO      [ \t\r\n]+
 "print"     { return TK_PRINT; }
 "read"      { return TK_READ; }
 "string"    { return TK_STRING; }
+"exit"      { return TK_EXIT; }
+
 
 \"[^\"]*\" {
     std::string str(yytext);

@@ -87,28 +87,6 @@ void dump_tabela() {
     std::cout << "--------------------------------\n\n";
 }
 
-std::string get_temp(const std::string& var) {
-    for (int i = tabela_simbolos.size() - 1; i >= 0; --i)
-        if (tabela_simbolos[i].count(var)) return tabela_simbolos[i][var].temp;
-    std::cerr << "Erro: variável '" << var << "' não declarada.\n";
-    exit(1);
-}
-
-std::string get_tipo(const std::string& var) {
-    for (int i = tabela_simbolos.size() - 1; i >= 0; --i)
-        if (tabela_simbolos[i].count(var)) return tabela_simbolos[i][var].tipo;
-    std::cerr << "Erro: variável '" << var << "' não declarada.\n";
-    exit(1);
-}
-
-Simbolo buscar_simbolo(const std::string& nome) {
-    for (int i = tabela_simbolos.size() - 1; i >= 0; --i)
-        if (tabela_simbolos[i].count(nome)) return tabela_simbolos[i][nome];
-    std::cerr << "Erro: variável '" << nome << "' não declarada.\n";
-    exit(1);
-}
-
-
 void declarar(const std::string& nome, const std::string& tipo, bool constante = false) {
     if (tabela_simbolos.back().count(nome)) {
         std::cerr << "Erro: variável '" << nome << "' já declarada neste escopo.\n";
@@ -117,6 +95,36 @@ void declarar(const std::string& nome, const std::string& tipo, bool constante =
     std::string t = gentemp(tipo);
     Simbolo s{nome, tipo, t, escopo_atual, constante, false, profundidade_escopo};
     tabela_simbolos.back()[nome] = s;
+}
+
+std::string get_temp(const std::string& var) {
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i)
+        if (tabela_simbolos[i].count(var))
+            return tabela_simbolos[i][var].temp;
+
+    // Declaração implícita: assume int
+    std::cerr << "Aviso: variável '" << var << "' não declarada. Será assumida como 'int'.\n";
+    declarar(var, "int");
+    return tabela_simbolos.back()[var].temp;
+}
+
+std::string get_tipo(const std::string& var) {
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i)
+        if (tabela_simbolos[i].count(var))
+            return tabela_simbolos[i][var].tipo;
+
+    // Declaração implícita: assume int
+    std::cerr << "Aviso: variável '" << var << "' não declarada. Será assumida como 'int'.\n";
+    declarar(var, "int");
+    return "int";
+}
+
+
+Simbolo buscar_simbolo(const std::string& nome) {
+    for (int i = tabela_simbolos.size() - 1; i >= 0; --i)
+        if (tabela_simbolos[i].count(nome)) return tabela_simbolos[i][nome];
+    std::cerr << "Erro: variável '" << nome << "' não declarada.\n";
+    exit(1);
 }
 
 
@@ -169,15 +177,13 @@ std::string gerar_cast(std::string origem, std::string tipo_origem, std::string 
 %token TK_DO
 %token TK_FOR
 %token TK_SWITCH TK_CASE TK_DEFAULT
-%token TK_BREAK TK_CONTINUE TK_STRLIT
+%token TK_BREAK TK_CONTINUE TK_STRLIT TK_BREAKALL
 %token TK_ADDEQ TK_SUBEQ TK_MULTEQ TK_DIVEQ
 %token TK_INC TK_DEC
 %token TK_POW
-
-
-
-
-
+%token TK_VAR
+%token TK_INTDIV TK_LSHIFT TK_RSHIFT
+%token TK_EXIT
 
 
 %left '+' '-'
@@ -186,8 +192,8 @@ std::string gerar_cast(std::string origem, std::string tipo_origem, std::string 
 %left TK_AND
 %left TK_OR
 %right TK_POW
-
-
+%left TK_LSHIFT TK_RSHIFT
+%left TK_INTDIV '%'
 
 
 %start S
@@ -279,6 +285,7 @@ DECL
     std::string cast = gerar_cast($4.label, $4.tipo, "boolean", $4.traducao);
     $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
 }
+
 ;
 
 
@@ -546,12 +553,20 @@ COMANDO : | TK_ID '=' E ';' {
 | TK_ID TK_ADDEQ E ';' {
     std::string var = get_temp($1.label);
     std::string tipo = get_tipo($1.label);
-    std::string temp = gentemp(tipo);
-    std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
-    $$.traducao = $3.traducao;
-    $$.traducao += "    " + temp + " = " + var + " + " + cast + ";\n";
-    $$.traducao += "    " + var + " = " + temp + ";\n";
+
+    if (tipo == "string" && $3.tipo == "string") {
+        $$.traducao = $3.traducao;
+        $$.traducao += "    " + var + " = (char*) realloc(" + var + ", strlen(" + var + ") + strlen(" + $3.label + ") + 1);\n";
+        $$.traducao += "    strcat(" + var + ", " + $3.label + ");\n";
+    } else {
+        std::string temp = gentemp(tipo);
+        std::string cast = gerar_cast($3.label, $3.tipo, tipo, $3.traducao);
+        $$.traducao = $3.traducao;
+        $$.traducao += "    " + temp + " = " + var + " + " + cast + ";\n";
+        $$.traducao += "    " + var + " = " + temp + ";\n";
+    }
 }
+
 
 | TK_ID TK_SUBEQ E ';' {
     std::string var = get_temp($1.label);
@@ -598,9 +613,6 @@ COMANDO : | TK_ID '=' E ';' {
     $$.traducao = "    " + temp + " = " + var + " - 1;\n";
     $$.traducao += "    " + var + " = " + temp + ";\n";
 }
-
-
-
 
 | TK_PRINT '(' TK_ID ')' ';' {
     std::string temp = get_temp($3.label);
@@ -711,7 +723,6 @@ COMANDO : | TK_ID '=' E ';' {
 }
 
 
-
 | TK_FOR '(' FOR_INIT ')' BLOCO {
     $$.traducao = $3.traducao;
     $$.traducao += $5.traducao;                  // corpo do laço
@@ -776,10 +787,6 @@ COMANDO : | TK_ID '=' E ';' {
 }
 
 
-
-
-
-
 | TK_BREAK ';' {
     if (pilha_controle.empty()) {
         std::cerr << "Erro: 'break' fora de estrutura de controle.\n";
@@ -787,6 +794,30 @@ COMANDO : | TK_ID '=' E ';' {
     }
     $$.traducao = "    goto " + pilha_controle.back().rotulo_break + "; // break\n";
 }
+
+| TK_BREAKALL ';' {
+    if (pilha_controle.empty()) {
+        std::cerr << "Erro: 'break all' fora de laço.\n";
+        exit(1);
+    }
+
+    std::string rotulo_externo = "";
+
+    for (int i = 0; i < pilha_controle.size(); ++i) {
+        if (pilha_controle[i].tipo == LOOP) {
+            rotulo_externo = pilha_controle[i].rotulo_break;
+            break;
+        }
+    }
+
+    if (rotulo_externo == "") {
+        std::cerr << "Erro: nenhum laço externo encontrado para 'break all'.\n";
+        exit(1);
+    }
+
+    $$.traducao = "    goto " + rotulo_externo + "; // break all\n";
+}
+
 
 | TK_CONTINUE ';' {
     bool encontrou = false;
@@ -803,7 +834,18 @@ COMANDO : | TK_ID '=' E ';' {
     }
 }
 
+| TK_VAR TK_ID '=' E ';' {
+    // Inferir tipo a partir da expressão
+    std::string tipo_inferido = $4.tipo;
+    declarar($2.label, tipo_inferido);  // declara a variável com o tipo deduzido
+    std::string temp = get_temp($2.label);
+    std::string cast = gerar_cast($4.label, $4.tipo, tipo_inferido, $4.traducao);
+    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+}
 
+| TK_EXIT ';' {
+    $$.traducao = "    exit(0);\n";
+}
 
 
 | BLOCO {
@@ -870,15 +912,27 @@ DEFAULT_OPCIONAL : /* vazio */ {
 
 
 E : E '+' E {
-    std::string tipo_resultado = ($1.tipo == "float" || $3.tipo == "float") ? "float" : "int";
-    std::string t = gentemp(tipo_resultado);
-    std::string traducao = $1.traducao + $3.traducao;
-    std::string a1 = gerar_cast($1.label, $1.tipo, tipo_resultado, traducao);
-    std::string a2 = gerar_cast($3.label, $3.tipo, tipo_resultado, traducao);
-    $$.label = t;
-    $$.tipo = tipo_resultado;
-    $$.traducao = traducao + "    " + t + " = " + a1 + " + " + a2 + ";\n";
+    if ($1.tipo == "string" && $3.tipo == "string") {
+        std::string temp = gentemp("string");
+        $$.label = temp;
+        $$.tipo = "string";
+
+        $$.traducao = $1.traducao + $3.traducao;
+        $$.traducao += "    " + temp + " = (char*) malloc(strlen(" + $1.label + ") + strlen(" + $3.label + ") + 1);\n";
+        $$.traducao += "    strcpy(" + temp + ", " + $1.label + ");\n";
+        $$.traducao += "    strcat(" + temp + ", " + $3.label + ");\n";
+    } else {
+        std::string tipo_resultado = ($1.tipo == "float" || $3.tipo == "float") ? "float" : "int";
+        std::string t = gentemp(tipo_resultado);
+        std::string traducao = $1.traducao + $3.traducao;
+        std::string a1 = gerar_cast($1.label, $1.tipo, tipo_resultado, traducao);
+        std::string a2 = gerar_cast($3.label, $3.tipo, tipo_resultado, traducao);
+        $$.label = t;
+        $$.tipo = tipo_resultado;
+        $$.traducao = traducao + "    " + t + " = " + a1 + " + " + a2 + ";\n";
+    }
 }
+
 
 | E '-' E {
     std::string tipo_resultado = ($1.tipo == "float" || $3.tipo == "float") ? "float" : "int";
@@ -1025,6 +1079,91 @@ E : E '+' E {
     $$.label = t;
     $$.tipo = "int";
     $$.traducao = $2.traducao + "    " + t + " = ~" + $2.label + ";\n";
+}
+
+| E '%' E {
+    if ($1.tipo != "int" || $3.tipo != "int") {
+        std::cerr << "Erro: '%' só funciona com int\n"; exit(1);
+    }
+    std::string t = gentemp("int");
+    $$.label = t; $$.tipo = "int";
+    $$.traducao = $1.traducao + $3.traducao;
+    $$.traducao += "    " + t + " = " + $1.label + " % " + $3.label + ";\n";
+}
+
+| E TK_INTDIV E {
+    if ($1.tipo != "int" || $3.tipo != "int") {
+        std::cerr << "Erro: '//' só funciona com int\n"; exit(1);
+    }
+    std::string t = gentemp("int");
+    $$.label = t; $$.tipo = "int";
+    $$.traducao = $1.traducao + $3.traducao;
+    $$.traducao += "    " + t + " = " + $1.label + " / " + $3.label + ";\n";
+}
+
+| TK_ID '(' E ')' {
+    std::string func = $1.label;
+    std::string temp;
+
+    if (func == "sqrt" || func == "log" || func == "sin") {
+        if ($3.tipo != "float" && $3.tipo != "int") {
+            std::cerr << "Erro: função '" << func << "' espera float\n"; exit(1);
+        }
+
+        temp = gentemp("float");
+        std::string arg = gerar_cast($3.label, $3.tipo, "float", $3.traducao);
+        $$.traducao = $3.traducao;
+        $$.traducao += "    " + temp + " = " + func + "(" + arg + ");\n";
+        $$.label = temp;
+        $$.tipo = "float";
+    } else {
+        std::cerr << "Erro: função desconhecida '" << func << "'\n"; exit(1);
+    }
+}
+
+| TK_ID '(' E ',' E ')' {
+    std::string func = $1.label;
+
+    if (($3.tipo != $5.tipo) || ($3.tipo != "int" && $3.tipo != "float")) {
+        std::cerr << "Erro: 'min' e 'max' precisam de dois args do mesmo tipo numérico\n"; exit(1);
+    }
+
+    std::string t = gentemp($3.tipo);
+    std::string a = $3.label;
+    std::string b = $5.label;
+
+    $$.traducao = $3.traducao + $5.traducao;
+
+    if (func == "min") {
+        $$.traducao += "    if (" + a + " < " + b + ") " + t + " = " + a + "; else " + t + " = " + b + ";\n";
+    } else if (func == "max") {
+        $$.traducao += "    if (" + a + " > " + b + ") " + t + " = " + a + "; else " + t + " = " + b + ";\n";
+    } else {
+        std::cerr << "Erro: função '" << func << "' não suportada\n"; exit(1);
+    }
+
+    $$.label = t;
+    $$.tipo = $3.tipo;
+}
+
+| E TK_LSHIFT E {
+    if ($1.tipo != "int" || $3.tipo != "int") {
+        std::cerr << "Erro: '<<' espera inteiros\n"; exit(1);
+    }
+    std::string t = gentemp("int");
+    $$.label = t; $$.tipo = "int";
+    $$.traducao = $1.traducao + $3.traducao;
+    $$.traducao += "    " + t + " = " + $1.label + " << " + $3.label + ";\n";
+}
+
+| E TK_RSHIFT E {
+    if ($1.tipo != "int" || $3.tipo != "int") {
+        std::cerr << "Erro: '>>' espera inteiros\n"; exit(1);
+    }
+    std::string t = gentemp("int");
+    $$.label = t; $$.tipo = "int";
+    $$.traducao = $1.traducao + $3.traducao;
+    $$.traducao += "    " + t + " = " + $1.label + " >> " + $3.label + ";\n";
 }
 
 

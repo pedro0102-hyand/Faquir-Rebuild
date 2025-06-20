@@ -1,9 +1,59 @@
 int main {
-    int base = 3;
-    int expoente = 4;
-    int resultado = base ** expoente;
-    print(resultado);
+    int i = 0;
+    while (i < 10) {
+        int j = 0;
+        while (j < 5) {
+            break all;
+            j++;
+        }
+        i++;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
