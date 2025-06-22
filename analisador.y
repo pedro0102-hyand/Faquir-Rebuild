@@ -184,6 +184,7 @@ std::string gerar_cast(std::string origem, std::string tipo_origem, std::string 
 %token TK_VAR
 %token TK_INTDIV TK_LSHIFT TK_RSHIFT
 %token TK_EXIT
+%token TK_CONST
 
 
 %left '+' '-'
@@ -240,53 +241,59 @@ DECLS : DECL
       | DECLS DECL
 ;
 
-DECL
-: TK_INT TK_ID ';' {
-    declarar($2.label, "int");
-    $$.traducao = "";
-}
-| TK_INT TK_ID '=' E ';' {
-    declarar($2.label, "int");
-    std::string temp = get_temp($2.label);
-    std::string cast = gerar_cast($4.label, $4.tipo, "int", $4.traducao);
-    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
-}
+DECL:
+      TK_INT TK_ID '=' E ';' {
+        declarar($2.label, "int");
+        std::string temp = get_temp($2.label);
+        std::string cast = gerar_cast($4.label, $4.tipo, "int", $4.traducao);
+        $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+      }
+    | TK_FLOAT TK_ID '=' E ';' {
+        declarar($2.label, "float");
+        std::string temp = get_temp($2.label);
+        std::string cast = gerar_cast($4.label, $4.tipo, "float", $4.traducao);
+        $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+      }
+    | TK_CHAR TK_ID '=' E ';' {
+        declarar($2.label, "char");
+        std::string temp = get_temp($2.label);
+        std::string cast = gerar_cast($4.label, $4.tipo, "char", $4.traducao);
+        $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+      }
+    | TK_BOOLEAN TK_ID '=' E ';' {
+        declarar($2.label, "boolean");
+        std::string temp = get_temp($2.label);
+        std::string cast = gerar_cast($4.label, $4.tipo, "boolean", $4.traducao);
+        $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
+      }
 
-
-| TK_FLOAT TK_ID ';' {
-    declarar($2.label, "float");
-    $$.traducao = "";
-}
-| TK_FLOAT TK_ID '=' E ';' {
-    declarar($2.label, "float");
-    std::string temp = get_temp($2.label);
-    std::string cast = gerar_cast($4.label, $4.tipo, "float", $4.traducao);
-    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
-}
-
-| TK_CHAR TK_ID ';' {
-    declarar($2.label, "char");
-    $$.traducao = "";
-}
-| TK_CHAR TK_ID '=' E ';' {
-    declarar($2.label, "char");
-    std::string temp = get_temp($2.label);
-    std::string cast = gerar_cast($4.label, $4.tipo, "char", $4.traducao);
-    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
-}
-
-| TK_BOOLEAN TK_ID ';' {
-    declarar($2.label, "boolean");
-    $$.traducao = "";
-}
-| TK_BOOLEAN TK_ID '=' E ';' {
-    declarar($2.label, "boolean");
-    std::string temp = get_temp($2.label);
-    std::string cast = gerar_cast($4.label, $4.tipo, "boolean", $4.traducao);
-    $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
-}
-
+ 
+    | TK_CONST TK_INT TK_ID '=' E ';' {
+        declarar($3.label, "int", true);
+        std::string temp = get_temp($3.label);
+        std::string cast = gerar_cast($5.label, $5.tipo, "int", $5.traducao);
+        $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+      }
+    | TK_CONST TK_FLOAT TK_ID '=' E ';' {
+        declarar($3.label, "float", true);
+        std::string temp = get_temp($3.label);
+        std::string cast = gerar_cast($5.label, $5.tipo, "float", $5.traducao);
+        $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+      }
+    | TK_CONST TK_CHAR TK_ID '=' E ';' {
+        declarar($3.label, "char", true);
+        std::string temp = get_temp($3.label);
+        std::string cast = gerar_cast($5.label, $5.tipo, "char", $5.traducao);
+        $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+      }
+    | TK_CONST TK_BOOLEAN TK_ID '=' E ';' {
+        declarar($3.label, "boolean", true);
+        std::string temp = get_temp($3.label);
+        std::string cast = gerar_cast($5.label, $5.tipo, "boolean", $5.traducao);
+        $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+      }
 ;
+
 
 
 
@@ -462,6 +469,12 @@ DO_INIT : TK_DO {
 
 
 COMANDO : | TK_ID '=' E ';' {
+    Simbolo s = buscar_simbolo($1.label);
+    if (s.constante) {
+        std::cerr << "Erro: tentativa de atribuir valor à constante '" << $1.label << "'.\n";
+        exit(1);
+    }
+
     std::string var_temp = get_temp($1.label);
     std::string var_tipo = get_tipo($1.label);
     std::ostringstream ss;
@@ -477,6 +490,7 @@ COMANDO : | TK_ID '=' E ';' {
 
     $$.traducao = ss.str();
 }
+
 
 
 | TK_INT TK_ID ';' {
@@ -549,6 +563,32 @@ COMANDO : | TK_ID '=' E ';' {
     std::string cast = gerar_cast($4.label, $4.tipo, "boolean", $4.traducao);
     $$.traducao = $4.traducao + "    " + temp + " = " + cast + ";\n";
 }
+
+  | TK_CONST TK_INT TK_ID '=' E ';' {
+      declarar($3.label, "int", true);
+      std::string temp = get_temp($3.label);
+      std::string cast = gerar_cast($5.label, $5.tipo, "int", $5.traducao);
+      $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+  }
+  | TK_CONST TK_FLOAT TK_ID '=' E ';' {
+      declarar($3.label, "float", true);
+      std::string temp = get_temp($3.label);
+      std::string cast = gerar_cast($5.label, $5.tipo, "float", $5.traducao);
+      $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+  }
+  | TK_CONST TK_CHAR TK_ID '=' E ';' {
+      declarar($3.label, "char", true);
+      std::string temp = get_temp($3.label);
+      std::string cast = gerar_cast($5.label, $5.tipo, "char", $5.traducao);
+      $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+  }
+  | TK_CONST TK_BOOLEAN TK_ID '=' E ';' {
+      declarar($3.label, "boolean", true);
+      std::string temp = get_temp($3.label);
+      std::string cast = gerar_cast($5.label, $5.tipo, "boolean", $5.traducao);
+      $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
+  }
+
 
 | TK_ID TK_ADDEQ E ';' {
     std::string var = get_temp($1.label);

@@ -12,6 +12,7 @@ ESPACO      [ \t\r\n]+
 "int"       { return TK_INT; }
 "float"     { return TK_FLOAT; }
 "main"      { return TK_MAIN; }
+"const"     { return TK_CONST; }
 
 "var"   { return TK_VAR; }
 
@@ -103,15 +104,15 @@ break[ \t]+all   { return TK_BREAKALL; }
 }
 
 
-
-
-
 [A-Za-z_][A-Za-z0-9_]* {
     yylval.label = string(yytext);
     return TK_ID;
 }
 
 {ESPACO}         { /* ignora */ }
+"/#/"[^\n]*        { /* ignora comentário Faquir de linha */ }
+"/*"(.|\n)*?"*/"   { /* ignora comentário de bloco */ }
+
 
 .                { return *yytext; }
 

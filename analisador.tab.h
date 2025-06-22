@@ -85,7 +85,8 @@
      TK_INTDIV = 301,
      TK_LSHIFT = 302,
      TK_RSHIFT = 303,
-     TK_EXIT = 304
+     TK_EXIT = 304,
+     TK_CONST = 305
    };
 #endif
 /* Tokens.  */
@@ -136,6 +137,7 @@
 #define TK_LSHIFT 302
 #define TK_RSHIFT 303
 #define TK_EXIT 304
+#define TK_CONST 305
 
 
 

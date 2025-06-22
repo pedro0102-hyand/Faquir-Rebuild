@@ -1,14 +1,36 @@
 int main {
-    int i = 0;
-    while (i < 10) {
-        int j = 0;
-        while (j < 5) {
-            break all;
-            j++;
-        }
-        i++;
-    }
+    const int a = 10;
+    const float pi = 3.14;
+    const char letra = 'Z';
+    const boolean flag = true;
+
+    print(a);
+    print(pi);
+    print(letra);
+    print(flag);
+
+    exit;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
