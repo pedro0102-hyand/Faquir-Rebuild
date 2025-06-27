@@ -1,16 +1,82 @@
+enum Cor { VERMELHO, VERDE, AZUL };
+
 int main {
-    const int a = 10;
-    const float pi = 3.14;
-    const char letra = 'Z';
-    const boolean flag = true;
+    Cor cor;
+    cor = AZUL;
 
-    print(a);
-    print(pi);
-    print(letra);
-    print(flag);
+    switch(cor) {
+        case 0: {
+            print("Vermelho");
+            break;
+        }
+        case 1: {
+            print("Verde");
+            break;
+        }
+        case 2: {
+            print("Azul");
+            break;
+        }
+        default: {
+            print("Cor desconhecida");
+        }
+    }
 
-    exit;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

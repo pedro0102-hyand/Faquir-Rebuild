@@ -45,7 +45,8 @@ struct Controle {
 };
 
 std::vector<Controle> pilha_controle;
-
+std::unordered_map<std::string, std::unordered_map<std::string, int>> enums;
+std::unordered_map<std::string, std::string> constantes_enum;
 
 int yylex(void);
 void yyerror(const char* s) {
@@ -185,6 +186,8 @@ std::string gerar_cast(std::string origem, std::string tipo_origem, std::string 
 %token TK_INTDIV TK_LSHIFT TK_RSHIFT
 %token TK_EXIT
 %token TK_CONST
+%token TK_ENUM
+
 
 
 %left '+' '-'
@@ -292,9 +295,26 @@ DECL:
         std::string cast = gerar_cast($5.label, $5.tipo, "boolean", $5.traducao);
         $$.traducao = $5.traducao + "    " + temp + " = " + cast + ";\n";
       }
+    | TK_ENUM TK_ID '{' LISTA_ENUM '}' ';' {
+    // Apenas registramos os enums internamente, não geramos código
+}
+
 ;
 
-
+LISTA_ENUM
+    : TK_ID {
+        enums[$0.label][$1.label] = 0;
+        constantes_enum[$1.label] = $0.label;
+        $$.label = $0.label;
+    }
+    | LISTA_ENUM ',' TK_ID {
+        std::string enum_nome = $1.label;
+        int valor = enums[enum_nome].size();
+        enums[enum_nome][$3.label] = valor;
+        constantes_enum[$3.label] = enum_nome;
+        $$.label = enum_nome;
+    }
+;
 
 
 BLOCO : '{' {
@@ -520,6 +540,14 @@ COMANDO : | TK_ID '=' E ';' {
     $$.traducao = ss.str();
 }
 
+| TK_ID TK_ID ';' {
+    if (!enums.count($1.label)) {
+        std::cerr << "Erro: tipo enum '" << $1.label << "' não declarado.\n";
+        exit(1);
+    }
+    declarar($2.label, "int");  // enums são armazenados como inteiros
+    $$.traducao = "";
+}
 
 
 | TK_STRING TK_ID '=' E ';' {
@@ -1222,11 +1250,22 @@ E : E '+' E {
 }
 
 | TK_ID {
-    std::string t = get_temp($1.label);
-    $$.label = t;
-    $$.tipo = get_tipo($1.label);
-    $$.traducao = "";
+    if (constantes_enum.count($1.label)) {
+        std::string nome_enum = constantes_enum[$1.label];
+        int valor = enums[nome_enum][$1.label];
+
+        std::string t = gentemp("int");
+        $$.label = t;
+        $$.tipo = "int";
+        $$.traducao = "    " + t + " = " + std::to_string(valor) + ";\n";
+    } else {
+        std::string t = get_temp($1.label);
+        $$.label = t;
+        $$.tipo = get_tipo($1.label);
+        $$.traducao = "";
+    }
 }
+
 
 | TK_TRUE {
     std::string t = gentemp("boolean");

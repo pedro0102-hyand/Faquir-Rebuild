@@ -9,6 +9,7 @@ ESPACO      [ \t\r\n]+
 
 %%
 
+"enum"      { return TK_ENUM; }
 "int"       { return TK_INT; }
 "float"     { return TK_FLOAT; }
 "main"      { return TK_MAIN; }
